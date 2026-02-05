@@ -313,23 +313,9 @@ This is an academic project for INSY 674 - Enterprise Data Science at McGill Uni
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
-## 🙏 Acknowledgments
-
-- **Metropolitan Museum of Art** for providing the open-source API
-- **Professor Fatih Nayebi** for guidance and feedback
-- **INSY 674 Teaching Assistants** for support
 
 ---
 
-## 📧 Contact
-
-For questions or collaboration:
-- **GitHub Issues:** [Create an issue](https://github.com/romane-lg/Met_ML_Exhibitions/issues)
-- **Email:** [your.email@mail.mcgill.ca]
-
----
 
 **Last Updated:** February 5, 2026  
 **Course:** INSY 674 - Enterprise Data Science, Winter 2026  

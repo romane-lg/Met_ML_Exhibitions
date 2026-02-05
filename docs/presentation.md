@@ -252,6 +252,3 @@ AI-powered recommendation system that suggests optimal artwork groupings based o
 4. **Screenshot mockup** of Streamlit app
 5. **Team photo** (optional)
 
----
-
-**Good luck with your presentation! 🚀**
