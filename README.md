@@ -62,7 +62,7 @@ An intelligent recommendation system where curators input:
 ## 👥 Team
 
 | Name | GitHub ID | Role |
-|------|-----------|
+|------|-----------|------|
 | Sofia Berumen | [@sofiaberumenr] | NLP & Text Analytics - TF-IDF, LDA, text preprocessing, metadata analysis |
 | Zoe Levings | [@zoe-levings] | App Development & Integration - Streamlit UI, visualization, system integration, deployment |
 | Romane Lucas-Girardville | [@romane-lg] | ML & Recommendation Engine - Feature engineering, similarity scoring, clustering, evaluation |
