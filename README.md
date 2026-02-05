@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
-> An AI-powered recommendation system to help Metropolitan Museum of Art exhibition planners automatically curate thematic exhibitions, reducing manual curation time by 60%+.
+> An AI-powered recommendation system to help Metropolitan Museum of Art exhibition planners automatically curate thematic exhibitions, reducing manual curation effort.
 
 ---
 
@@ -38,13 +38,13 @@ This project addresses the growing operational challenges at the Metropolitan Mu
 
 ## 💼 Business Problem
 
-**Challenge:** MET exhibition planners spend 40+ hours manually curating each exhibition, leading to:
+**Challenge:** MET exhibition planners spend countless hours manually curating each exhibition, leading to:
 - Worker burnout and unionization efforts
 - Slow exhibition development cycles
 - Limited exploration of creative curatorial options
 - High operational costs
 
-**Hypothesis:** AI-driven automation can reduce curation time by 60%+ while maintaining or improving exhibition quality through data-driven theme matching.
+**Our Approach:** Build an automated recommendation system using Google Vision API for image analysis and natural language processing to suggest optimal artwork groupings for themed exhibitions.
 
 ---
 
@@ -62,11 +62,11 @@ An intelligent recommendation system where curators input:
 ## 👥 Team
 
 | Name | GitHub ID | Role |
-|------|-----------|------|
-| Sofia Berumen | [@sofiaberumenr] | Data Scientist / ML Engineer |
-| Zoe Levings | [@teammate2-github] | NLP Specialist / Text Analytics |
-| Romane Lucas-Girardville | [@romane-lg] | NLP Specialist / Text Analytics |
-| Andrea Vreugdenhil | [@andreavreug] | Computer Vision / API Integration |
+|------|-----------|
+| Sofia Berumen | [@sofiaberumenr] | NLP & Text Analytics - TF-IDF, LDA, text preprocessing, metadata analysis |
+| Zoe Levings | [@zoe-levings] | App Development & Integration - Streamlit UI, visualization, system integration, deployment |
+| Romane Lucas-Girardville | [@romane-lg] | ML & Recommendation Engine - Feature engineering, similarity scoring, clustering, evaluation |
+| Andrea Vreugdenhil | [@andreavreug] | Vision API & Image Features - Google Cloud setup, API integration, image processing pipeline |
 
 **Repository:** [romane-lg/Met_ML_Exhibitions](https://github.com/romane-lg/Met_ML_Exhibitions)
 
