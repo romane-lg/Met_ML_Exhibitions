@@ -1,0 +1,139 @@
+# ====================================
+# MET Exhibition Curator - Configuration
+# ====================================
+
+# Project Settings
+project:
+  name: "MET Exhibition AI Curator"
+  version: "1.0.0"
+  random_seed: 42
+
+# Data Paths
+data:
+  raw_data_path: "data/raw/met_data.csv"
+  images_path: "data/raw/images/"
+  processed_path: "data/processed/"
+  results_path: "data/results/"
+
+# Google Vision API
+vision_api:
+  max_results: 10
+  features:
+    - LABEL_DETECTION
+    - OBJECT_LOCALIZATION
+    - IMAGE_PROPERTIES
+    - WEB_DETECTION
+    - TEXT_DETECTION
+  batch_size: 16
+  rate_limit_delay: 0.1  # seconds between requests
+
+# Text Analytics
+text_features:
+  # TF-IDF Parameters
+  tfidf:
+    max_features: 500
+    ngram_range: [1, 2]
+    min_df: 2
+    max_df: 0.8
+    stop_words: "english"
+  
+  # Topic Modeling (LDA)
+  lda:
+    n_topics: 10
+    max_iter: 20
+    learning_method: "online"
+    random_state: 42
+  
+  # Text fields to combine
+  text_columns:
+    - title
+    - artist
+    - medium
+    - department
+    - objectDate
+
+# Feature Engineering
+features:
+  # Dimensionality reduction
+  use_pca: true
+  pca_components: 50
+  
+  # Feature weights (vision vs text)
+  vision_weight: 0.5
+  text_weight: 0.5
+  
+  # Normalization
+  normalize: true
+  scaler: "standard"  # standard, minmax, or robust
+
+# Clustering
+clustering:
+  # K-Means
+  kmeans:
+    n_clusters: 15
+    max_iter: 300
+    n_init: 10
+    random_state: 42
+  
+  # DBSCAN
+  dbscan:
+    eps: 0.5
+    min_samples: 5
+    metric: "cosine"
+  
+  # Evaluation
+  evaluate: true
+  metrics:
+    - silhouette_score
+    - davies_bouldin_score
+    - calinski_harabasz_score
+
+# Recommendation System
+recommender:
+  # Similarity metric
+  similarity_metric: "cosine"  # cosine, euclidean, manhattan
+  
+  # Recommendation parameters
+  top_k: 30  # Number of recommendations per exhibition
+  diversity_weight: 0.3  # Balance between similarity and diversity
+  
+  # Constraints
+  min_pieces_per_exhibition: 15
+  max_pieces_per_exhibition: 50
+  
+  # Query expansion
+  use_query_expansion: true
+  expansion_terms: 3
+
+# Streamlit App
+app:
+  title: "MET Exhibition AI Curator"
+  page_icon: "🎨"
+  layout: "wide"
+  
+  # Display settings
+  max_images_per_page: 20
+  thumbnail_size: [200, 200]
+  
+  # Default values
+  default_n_exhibitions: 5
+  default_max_pieces: 30
+
+# Model Training
+training:
+  test_size: 0.2
+  validation_split: 0.2
+  cross_validation_folds: 5
+  
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  log_to_file: true
+  log_file: "logs/app.log"
+
+# Experiment Tracking (MLflow)
+mlflow:
+  enabled: false
+  tracking_uri: "file:./mlruns"
+  experiment_name: "met_exhibition_curator"

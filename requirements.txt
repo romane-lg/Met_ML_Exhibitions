@@ -1,0 +1,59 @@
+# Core Data Science Libraries
+numpy==1.24.3
+pandas==2.0.3
+scipy==1.11.1
+
+# Machine Learning
+scikit-learn==1.3.0
+joblib==1.3.1
+
+# Computer Vision
+google-cloud-vision==3.4.4
+Pillow==10.0.0
+opencv-python==4.8.0.76
+
+# Natural Language Processing
+nltk==3.8.1
+spacy==3.6.0
+gensim==4.3.1
+transformers==4.31.0
+sentence-transformers==2.2.2
+
+# Web Framework
+streamlit==1.25.0
+streamlit-chat==0.1.1
+
+# Data Visualization
+matplotlib==3.7.2
+seaborn==0.12.2
+plotly==5.15.0
+
+# API and Web
+requests==2.31.0
+beautifulsoup4==4.12.2
+
+# Configuration Management
+python-dotenv==1.0.0
+PyYAML==6.0.1
+
+# Utilities
+tqdm==4.65.0
+pathlib==1.0.1
+python-dateutil==2.8.2
+
+# Experiment Tracking (Optional)
+mlflow==2.5.0
+
+# Testing
+pytest==7.4.0
+pytest-cov==4.1.0
+
+# Code Quality
+black==23.7.0
+flake8==6.0.0
+pylint==2.17.4
+
+# Jupyter
+jupyter==1.0.0
+notebook==7.0.2
+ipywidgets==8.1.0
