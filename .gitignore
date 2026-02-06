@@ -49,23 +49,19 @@ api_keys.env
 secrets.yaml
 
 # Data files (large files should not be committed)
-data/raw/images/
-data/raw/*.csv
-data/processed/*.pkl
-data/processed/*.h5
-data/processed/*.npy
-data/results/*.csv
-*.csv
-*.pkl
-*.h5
-*.npy
+# Now allowing data files to be committed
+# *.csv
+# *.pkl
+# *.h5
+# *.npy
 
-# Images (keep sample, ignore bulk)
-images/
-*.jpg
-*.jpeg
-*.png
+# Images (allowing data images, but excluding general images folder)
+# images/
+# *.jpg
+# *.jpeg
+# *.png
 *.gif
+!data/**
 !docs/images/
 !docs/*.png
 
