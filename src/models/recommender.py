@@ -1,282 +1,248 @@
-"""
-Recommendation system for exhibition curation.
+from __future__ import annotations
 
-This module provides the core recommendation engine that suggests artwork
-groupings based on thematic queries.
-"""
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable
 
+import joblib
 import numpy as np
 import pandas as pd
-from typing import List, Dict, Optional, Tuple
-from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
-import logging
 
-logger = logging.getLogger(__name__)
+
+@dataclass
+class Recommendation:
+    object_id: int
+    score: float
+    title: str | None
+    artist: str | None
+    department: str | None
+    object_date: str | None
+    medium: str | None
+    image_path: str | None
 
 
 class ExhibitionRecommender:
-    """Recommend artworks for themed exhibitions."""
-    
+    """Content-based recommender backed by dense combined embeddings."""
+
     def __init__(
         self,
-        features: np.ndarray,
+        embeddings: np.ndarray,
         metadata: pd.DataFrame,
-        similarity_metric: str = 'cosine',
-        diversity_weight: float = 0.3
-    ):
-        """
-        Initialize the recommender.
-        
-        Parameters
-        ----------
-        features : np.ndarray
-            Feature matrix (n_artworks, n_features)
-        metadata : pd.DataFrame
-            Artwork metadata
-        similarity_metric : str
-            'cosine', 'euclidean', or 'manhattan'
-        diversity_weight : float
-            Weight for diversity in recommendations (0-1)
-        """
-        self.features = features
-        self.metadata = metadata
-        self.similarity_metric = similarity_metric
-        self.diversity_weight = diversity_weight
-        
-        # Precompute similarity matrix
-        self.similarity_matrix = self._compute_similarity_matrix()
-        
-        logger.info(f"Initialized recommender with {len(metadata)} artworks")
-    
-    def _compute_similarity_matrix(self) -> np.ndarray:
-        """
-        Compute pairwise similarity matrix.
-        
-        Returns
-        -------
-        np.ndarray
-            Similarity matrix (n_artworks, n_artworks)
-        """
-        if self.similarity_metric == 'cosine':
-            similarity = cosine_similarity(self.features)
-        elif self.similarity_metric == 'euclidean':
-            distances = euclidean_distances(self.features)
-            # Convert distances to similarities
-            similarity = 1 / (1 + distances)
+        text_vectorizer: TfidfVectorizer,
+        ranker: object | None = None,
+        numeric_features: np.ndarray | None = None,
+        numeric_columns: list[str] | None = None,
+    ) -> None:
+        self.embeddings = normalize(np.asarray(embeddings), norm="l2", axis=1)
+        self.metadata = metadata.reset_index(drop=True)
+        self.text_vectorizer = text_vectorizer
+        self.ranker = ranker
+        self.numeric_features = (
+            np.asarray(numeric_features, dtype=np.float32)
+            if numeric_features is not None
+            else np.zeros((len(self.metadata), 0), dtype=np.float32)
+        )
+        self.numeric_columns = numeric_columns or []
+        self.nn = NearestNeighbors(metric="cosine")
+        self.nn.fit(self.embeddings)
+        self.id_to_idx = {
+            int(row.objectID): idx for idx, row in self.metadata.iterrows() if pd.notna(row.objectID)
+        }
+
+    @classmethod
+    def from_artifacts(cls, artifacts_dir: str) -> "ExhibitionRecommender":
+        base = Path(artifacts_dir)
+        embeddings = np.load(base / "embeddings.npz")["embeddings"]
+        metadata = pd.read_csv(base / "meta.csv")
+        text_vectorizer = joblib.load(base / "text_vectorizer.joblib")
+        ranker_path = base / "lightgbm_ranker.joblib"
+        ranker = joblib.load(ranker_path) if ranker_path.exists() else None
+        numeric_path = base / "numeric_features.csv"
+        if numeric_path.exists():
+            numeric = pd.read_csv(numeric_path)
+            merged = metadata[["objectID"]].merge(numeric, on="objectID", how="left").fillna(0.0)
+            numeric_columns = [col for col in merged.columns if col != "objectID"]
+            numeric_features = merged[numeric_columns].to_numpy(dtype=np.float32) if numeric_columns else None
         else:
-            similarity = cosine_similarity(self.features)
-        
-        logger.info("Computed similarity matrix")
-        return similarity
-    
+            numeric_columns = []
+            numeric_features = None
+        return cls(embeddings, metadata, text_vectorizer, ranker, numeric_features, numeric_columns)
+
     def recommend_for_theme(
         self,
         theme_query: str,
-        n_recommendations: int = 30,
-        exclude_ids: Optional[List[int]] = None
+        n_recommendations: int = 10,
+        exclude_ids: Iterable[int] | None = None,
+        min_score: float = 0.0,
     ) -> pd.DataFrame:
-        """
-        Recommend artworks for a theme.
-        
-        Parameters
-        ----------
-        theme_query : str
-            Theme description (e.g., "ancient egypt", "portraits")
-        n_recommendations : int
-            Number of artworks to recommend
-        exclude_ids : List[int], optional
-            Object IDs to exclude from recommendations
-            
-        Returns
-        -------
-        pd.DataFrame
-            Recommended artworks with scores
-        """
-        # Simple keyword matching for MVP
-        # TODO: Implement semantic search with embeddings
-        query_lower = theme_query.lower()
-        
-        # Score based on text matching
-        scores = []
-        for idx, row in self.metadata.iterrows():
-            score = 0
-            
-            # Check title
-            if pd.notna(row.get('title')):
-                if query_lower in str(row['title']).lower():
-                    score += 0.5
-            
-            # Check department
-            if pd.notna(row.get('department')):
-                if query_lower in str(row['department']).lower():
-                    score += 0.3
-            
-            # Check medium
-            if pd.notna(row.get('medium')):
-                if query_lower in str(row['medium']).lower():
-                    score += 0.2
-            
-            scores.append(score)
-        
-        # Get seed artworks (those that match query)
-        seed_indices = np.argsort(scores)[-5:]  # Top 5 matches as seeds
-        
-        # Expand recommendations using similarity
-        recommendations = self._expand_recommendations(
-            seed_indices,
-            n_recommendations,
-            exclude_ids
-        )
-        
-        return recommendations
-    
-    def _expand_recommendations(
-        self,
-        seed_indices: np.ndarray,
-        n_recommendations: int,
-        exclude_ids: Optional[List[int]] = None
-    ) -> pd.DataFrame:
-        """
-        Expand recommendations from seed artworks.
-        
-        Parameters
-        ----------
-        seed_indices : np.ndarray
-            Indices of seed artworks
-        n_recommendations : int
-            Number of recommendations
-        exclude_ids : List[int], optional
-            Object IDs to exclude
-            
-        Returns
-        -------
-        pd.DataFrame
-            Recommended artworks
-        """
-        # Average similarity to seed artworks
-        seed_similarities = self.similarity_matrix[seed_indices].mean(axis=0)
-        
-        # Apply diversity penalty
-        # TODO: Implement diversity-aware selection
-        
-        # Create exclude mask
-        exclude_mask = np.ones(len(self.metadata), dtype=bool)
+        tokens = self._simple_tokenize(theme_query)
+        qarr = self._query_vector(tokens)
+        scores = (self.embeddings @ qarr.T).ravel()
+
         if exclude_ids:
-            exclude_indices = self.metadata[
-                self.metadata['objectID'].isin(exclude_ids)
-            ].index
-            exclude_mask[exclude_indices] = False
-        
-        # Apply mask
-        masked_scores = seed_similarities.copy()
-        masked_scores[~exclude_mask] = -np.inf
-        
-        # Get top recommendations
-        top_indices = np.argsort(masked_scores)[-n_recommendations:][::-1]
-        
-        # Create results DataFrame
-        results = self.metadata.iloc[top_indices].copy()
-        results['similarity_score'] = masked_scores[top_indices]
-        
-        return results
-    
+            excluded = set(exclude_ids)
+            mask = self.metadata["objectID"].astype("Int64").isin(excluded)
+            scores[mask.to_numpy()] = -1.0
+
+        pool_size = min(len(self.metadata), max(n_recommendations * 8, 80))
+        ranked = np.argsort(scores)[::-1][:pool_size]
+        reranked_scores = self._rerank_scores(theme_query, qarr, scores, ranked)
+        calibrated = self._calibrate_scores(reranked_scores)
+        order = np.argsort(calibrated)[::-1]
+        ranked = ranked[order]
+        ranked_scores = calibrated[order]
+        rows = []
+        for pos, idx in enumerate(ranked):
+            if len(rows) >= n_recommendations:
+                break
+            score = float(ranked_scores[pos])
+            if score < min_score:
+                continue
+            row = self._row(idx, score)
+            rows.append(row)
+
+        return pd.DataFrame([r.__dict__ for r in rows])
+
     def recommend_exhibitions(
         self,
-        themes: List[str],
-        max_pieces_per_exhibition: int = 30,
-        min_pieces_per_exhibition: int = 15
-    ) -> Dict[str, pd.DataFrame]:
-        """
-        Recommend artworks for multiple themed exhibitions.
-        
-        Parameters
-        ----------
-        themes : List[str]
-            List of exhibition themes
-        max_pieces_per_exhibition : int
-            Maximum artworks per exhibition
-        min_pieces_per_exhibition : int
-            Minimum artworks per exhibition
-            
-        Returns
-        -------
-        dict
-            Dictionary mapping theme to recommended artworks
-        """
-        recommendations = {}
-        used_ids = set()
-        
+        themes: list[str],
+        max_pieces_per_exhibition: int = 10,
+        min_pieces_per_exhibition: int = 5,
+        min_similarity: float = 0.1,
+    ) -> dict[str, pd.DataFrame]:
+        used_ids: set[int] = set()
+        results: dict[str, pd.DataFrame] = {}
         for theme in themes:
-            # Get recommendations excluding already used artworks
             recs = self.recommend_for_theme(
                 theme,
                 n_recommendations=max_pieces_per_exhibition,
-                exclude_ids=list(used_ids)
+                exclude_ids=used_ids,
+                min_score=min_similarity,
             )
-            
-            # Ensure minimum number of pieces
             if len(recs) < min_pieces_per_exhibition:
-                logger.warning(
-                    f"Only found {len(recs)} artworks for theme '{theme}' "
-                    f"(minimum: {min_pieces_per_exhibition})"
+                # fallback without threshold for low-coverage themes
+                recs = self.recommend_for_theme(
+                    theme,
+                    n_recommendations=max_pieces_per_exhibition,
+                    exclude_ids=used_ids,
+                    min_score=0.0,
                 )
-            
-            recommendations[theme] = recs
-            
-            # Mark these artworks as used
-            used_ids.update(recs['objectID'].values)
-        
-        return recommendations
-    
-    def evaluate_coherence(self, artwork_ids: List[int]) -> float:
-        """
-        Evaluate thematic coherence of a set of artworks.
-        
-        Parameters
-        ----------
-        artwork_ids : List[int]
-            Object IDs of artworks
-            
-        Returns
-        -------
-        float
-            Coherence score (0-1, higher is better)
-        """
-        indices = self.metadata[self.metadata['objectID'].isin(artwork_ids)].index
-        
+            results[theme] = recs
+            used_ids.update(int(v) for v in recs.get("object_id", []) if pd.notna(v))
+        return results
+
+    def evaluate_coherence(self, artwork_ids: list[int]) -> float:
+        indices = [self.id_to_idx[item] for item in artwork_ids if item in self.id_to_idx]
         if len(indices) < 2:
             return 0.0
-        
-        # Average pairwise similarity
-        subset_sim = self.similarity_matrix[np.ix_(indices, indices)]
-        
-        # Exclude diagonal
+        subset = self.embeddings[indices]
+        similarity = cosine_similarity(subset)
         mask = ~np.eye(len(indices), dtype=bool)
-        coherence = subset_sim[mask].mean()
-        
-        return float(coherence)
+        return float(similarity[mask].mean())
 
+    def score_by_tokens(self, tokens: list[str]) -> np.ndarray:
+        if not tokens:
+            return np.zeros(len(self.metadata), dtype=float)
+        qarr = self._query_vector(tokens)
+        return (self.embeddings @ qarr.T).ravel()
 
-if __name__ == "__main__":
-    # Example usage
-    logging.basicConfig(level=logging.INFO)
-    
-    from src.data import load_met_data
-    
-    # Load data
-    df = load_met_data()
-    
-    # Create dummy features for testing
-    features = np.random.rand(len(df), 50)
-    
-    # Initialize recommender
-    recommender = ExhibitionRecommender(features, df)
-    
-    # Test recommendations
-    themes = ["ancient egypt", "portraits", "religious art"]
-    exhibitions = recommender.recommend_exhibitions(themes, max_pieces_per_exhibition=20)
-    
-    for theme, artworks in exhibitions.items():
-        print(f"\n{theme.upper()}: {len(artworks)} artworks")
-        print(artworks[['title', 'department', 'similarity_score']].head())
+    def _query_vector(self, tokens: list[str]) -> np.ndarray:
+        query = " ".join(tokens)
+        qvec = self.text_vectorizer.transform([query])
+        qarr = normalize(qvec, norm="l2", axis=1).toarray().astype(np.float32)
+        return qarr.ravel()
+
+    def _rerank_scores(
+        self,
+        theme_query: str,
+        qarr: np.ndarray,
+        base_scores: np.ndarray,
+        candidate_indices: np.ndarray,
+    ) -> np.ndarray:
+        base = base_scores[candidate_indices].astype(np.float32)
+        if self.ranker is None:
+            return base
+
+        query_num = self._query_numeric_features(theme_query)
+        feats: list[np.ndarray] = []
+        for idx in candidate_indices:
+            emb_diff = np.abs(self.embeddings[idx] - qarr)
+            cosine = np.array([float(np.dot(self.embeddings[idx], qarr))], dtype=np.float32)
+            if self.numeric_features.shape[1] > 0:
+                num_diff = np.abs(self.numeric_features[idx] - query_num)
+            else:
+                num_diff = np.zeros((0,), dtype=np.float32)
+            feats.append(np.concatenate([emb_diff, cosine, num_diff]))
+        X = np.vstack(feats)
+        try:
+            if hasattr(self.ranker, "predict_proba"):
+                rank_scores = self.ranker.predict_proba(X)[:, 1].astype(np.float32)
+            else:
+                rank_scores = self.ranker.predict(X).astype(np.float32)
+        except Exception:
+            return base
+        return (0.55 * base + 0.45 * rank_scores).astype(np.float32)
+
+    @staticmethod
+    def _calibrate_scores(scores: np.ndarray) -> np.ndarray:
+        if scores.size == 0:
+            return scores
+        min_v = float(np.min(scores))
+        max_v = float(np.max(scores))
+        if max_v - min_v < 1e-8:
+            return np.clip(scores, 0.0, 1.0)
+        return ((scores - min_v) / (max_v - min_v)).astype(np.float32)
+
+    def _query_numeric_features(self, query: str) -> np.ndarray:
+        if self.numeric_features.shape[1] == 0:
+            return np.zeros((0,), dtype=np.float32)
+        vector = np.zeros((len(self.numeric_columns),), dtype=np.float32)
+        lower = query.lower()
+        years = [float(tok) for tok in lower.replace("-", " ").split() if tok.isdigit() and 3 <= len(tok) <= 4]
+        color_map = {
+            "red": (255.0, 0.0, 0.0),
+            "blue": (0.0, 0.0, 255.0),
+            "green": (0.0, 128.0, 0.0),
+            "gold": (212.0, 175.0, 55.0),
+            "black": (20.0, 20.0, 20.0),
+            "white": (245.0, 245.0, 245.0),
+            "brown": (120.0, 80.0, 40.0),
+        }
+        rgb_hits = [rgb for name, rgb in color_map.items() if name in lower]
+        for i, col in enumerate(self.numeric_columns):
+            if col == "meta_has_year":
+                vector[i] = 1.0 if years else 0.0
+            elif col == "meta_year_mean":
+                vector[i] = float(np.mean(years)) if years else 0.0
+            elif col == "vision_ocr_number_count":
+                vector[i] = float(len(years))
+            elif col == "vision_ocr_number_mean":
+                vector[i] = float(np.mean(years)) if years else 0.0
+            elif col == "vision_avg_red" and rgb_hits:
+                vector[i] = float(np.mean([rgb[0] for rgb in rgb_hits]))
+            elif col == "vision_avg_green" and rgb_hits:
+                vector[i] = float(np.mean([rgb[1] for rgb in rgb_hits]))
+            elif col == "vision_avg_blue" and rgb_hits:
+                vector[i] = float(np.mean([rgb[2] for rgb in rgb_hits]))
+        return vector
+
+    def _row(self, idx: int, score: float) -> Recommendation:
+        item = self.metadata.iloc[idx]
+        return Recommendation(
+            object_id=int(item.get("objectID")),
+            score=score,
+            title=item.get("title"),
+            artist=item.get("artist"),
+            department=item.get("department"),
+            object_date=item.get("objectDate"),
+            medium=item.get("medium"),
+            image_path=item.get("image_path"),
+        )
+
+    @staticmethod
+    def _simple_tokenize(text: str) -> list[str]:
+        return [t.lower() for t in text.replace("/", " ").replace(";", " ").split() if t]
