@@ -1,320 +1,211 @@
-# MET Exhibition AI Curator 🎨
+# Met_ML_Exhibitions
 
+Automated recommendation system for themed MET exhibitions using combined image and metadata text signals.
 
-> An AI-powered recommendation system to help Metropolitan Museum of Art exhibition planners automatically curate thematic exhibitions, reducing manual curation effort.
+## What Changed
+- Added engineering tooling with `uv`, `ruff`, `ty`, and standardized `make` targets.
+- Added API service (`FastAPI`) and containerization (`Docker`, `docker-compose`).
+- Reworked Streamlit to use real artifacts with theme filters, image display, and similarity thresholding.
+- Added feature build/train scripts with artifact caching and optional Google Vision integration.
+- Added test + coverage + load-test scaffolding.
 
----
+## Why Makefile
+- Single command surface for all common tasks.
+- Reduces setup drift across different machines.
+- Improves onboarding and CI consistency.
+- Keeps commands explicit and reviewable in one place (`Makefile`).
 
-## 📋 Table of Contents
-- [Project Overview](#project-overview)
-- [Business Problem](#business-problem)
-- [Solution](#solution)
-- [Team](#team)
-- [Dataset](#dataset)
-- [Technical Approach](#technical-approach)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Results](#results)
-- [Contributing](#contributing)
-- [License](#license)
+## Extended Docs
+- Methodology and design decisions: `docs/METHODOLOGY_AND_DECISIONS.md`
+- General best practices: `docs/BEST_PRACTICES.md`
 
----
+## Architecture
+- `src/loaders/image_api_loader.py`: Google Vision API loader (request/response + retries/errors), no cleaning.
+- `src/features/image_features.py`: cleans and tokenizes raw Vision response into feature-ready image signals.
+- `src/features/nlp_utils.py`: shared NLP tokenization/lemmatization utilities for text and image-derived tokens.
+- `scripts/build_features.py`: orchestrates data loading + image/text feature modules and writes artifacts.
+- `scripts/train_ranker.py`: trains optional LightGBM ranker on embedding-difference + cosine + numeric-feature differences.
+- `src/models/recommender.py`: Theme recommendation, exhibition grouping, coherence scoring.
+- `src/api/main.py`, `src/api/routes.py`: FastAPI endpoints.
+- `src/app/streamlit_app.py`: Interactive curator UI with image previews and filters.
 
-## 🎯 Project Overview
+## Data Layout
+- `data/raw/met_data.csv`: metadata table.
+- `data/raw/images/`: image files referenced by `image_path`.
+- `artifacts/`: generated assets.
+- `artifacts/embeddings.npz`
+- `artifacts/meta.csv`
+- `artifacts/tokens.json`
+- `artifacts/descriptions.csv`
+- `artifacts/numeric_features.csv`
+- `artifacts/vision_errors.csv` (only created when Vision extraction issues occur)
+- `artifacts/text_vectorizer.joblib`
+- `artifacts/lightgbm_ranker.joblib` (optional)
 
-This project addresses the growing operational challenges at the Metropolitan Museum of Art, where workers are facing increased workload due to rising museum popularity. We developed an AI-powered chatbot that automatically recommends optimal artwork groupings for themed exhibitions based on computer vision and natural language processing.
-
-**Key Features:**
-- 🤖 Interactive Streamlit chatbot interface
-- 🖼️ Image analysis using Google Vision API
-- 📊 Text analytics on artwork metadata
-- 🎯 Content-based recommendation engine
-- ✅ Constraint handling (exhibition size, diversity, theme coherence)
-
----
-
-## 💼 Business Problem
-
-**Challenge:** MET exhibition planners spend countless hours manually curating each exhibition, leading to:
-- Worker burnout and unionization efforts
-- Slow exhibition development cycles
-- Limited exploration of creative curatorial options
-- High operational costs
-
-**Our Approach:** Build an automated recommendation system using Google Vision API for image analysis and natural language processing to suggest optimal artwork groupings for themed exhibitions.
-
----
-
-## 💡 Solution
-
-An intelligent recommendation system where curators input:
-- Number of exhibitions needed
-- Themes per exhibition (e.g., "ancient Egypt", "religious art", "portraits")
-- Maximum pieces per exhibition (20-50)
-
-**Output:** Ranked lists of artworks per exhibition with similarity scores and visual previews.
-
----
-
-## 👥 Team
-
-| Name | GitHub ID | Role |
-|------|-----------|------|
-| Sofia Berumen | @sofiaberumenr | NLP & Text Analytics - TF-IDF, LDA, text preprocessing, metadata analysis |
-| Zoe Levings | @zoe-levings | App Development & Integration - Streamlit UI, visualization, system integration, deployment |
-| Romane Lucas-Girardville | @romane-lg | ML & Recommendation Engine - Feature engineering, similarity scoring, clustering, evaluation |
-| Andrea Vreugdenhil | @andreavreug | Vision API & Image Features - Google Cloud setup, API integration, image processing pipeline |
-
-**Repository:** [romane-lg/Met_ML_Exhibitions](https://github.com/romane-lg/Met_ML_Exhibitions)
-
----
-
-## 📊 Dataset
-
-**Source:** Metropolitan Museum of Art Collection API  
-**Size:** 448 artworks with images and metadata  
-**Coverage:** Diverse departments (Egyptian Art, European Paintings, Medieval Art, etc.)
-
-**Metadata Fields:**
-- `objectID`: Unique identifier
-- `title`: Artwork title
-- `artist`: Artist name
-- `department`: Museum department
-- `objectDate`: Creation date/period
-- `medium`: Materials and techniques
-- `image_path`: Local path to downloaded image
-
-**Data Collection:**
+## Setup
+1. Install dependencies:
 ```bash
-python scripts/download_data.py
+python -m pip install uv
+python -m uv sync --all-extras
 ```
-
----
-
-## 🔬 Technical Approach
-
-### **1. Feature Engineering**
-
-#### **Image Features (Computer Vision)**
-- Google Vision API for label detection, object recognition
-- Color analysis (dominant colors, palettes)
-- Text detection (inscriptions, signatures)
-- Web entities for contextual understanding
-
-#### **Text Features (NLP)**
-- TF-IDF vectorization on combined text (title + artist + medium)
-- Topic modeling (Latent Dirichlet Allocation)
-- Named Entity Recognition for dates, locations, artists
-- Sentiment analysis on artwork descriptions
-
-### **2. Recommendation Engine**
-
-- **Content-based filtering:** Cosine similarity on combined feature vectors
-- **Clustering:** K-means to discover natural thematic groups
-- **Query expansion:** Semantic search to match user themes
-- **Constraint optimization:** Balance theme coherence with exhibition size limits
-
-### **3. Tech Stack**
-
-| Component | Technology |
-|-----------|-----------|
-| Computer Vision | Google Vision API |
-| NLP | scikit-learn, spaCy, NLTK |
-| ML Modeling | scikit-learn, numpy, pandas |
-| Frontend | Streamlit |
-| Data Viz | matplotlib, seaborn, plotly |
-| Version Control | Git, GitHub |
-| Experiment Tracking | MLflow (optional) |
-
----
-
-## 📁 Project Structure
-
-```
-Met_ML_Exhibitions/
-├── data/
-│   ├── raw/                          # Original data (gitignored)
-│   │   ├── met_data.csv
-│   │   └── images/
-│   ├── processed/                     # Processed features
-│   │   ├── vision_features.pkl
-│   │   ├── text_features.pkl
-│   │   └── combined_embeddings.pkl
-│   └── results/                       # Model outputs
-│       └── exhibition_recommendations.csv
-├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_image_analysis.ipynb
-│   ├── 03_text_analytics.ipynb
-│   ├── 04_feature_engineering.ipynb
-│   ├── 05_clustering_analysis.ipynb
-│   └── 06_recommendation_system.ipynb
-├── src/
-│   ├── data/
-│   │   ├── __init__.py
-│   │   └── data_loader.py            # Data loading utilities
-│   ├── features/
-│   │   ├── __init__.py
-│   │   ├── image_features.py         # Google Vision API
-│   │   ├── text_features.py          # NLP preprocessing
-│   │   └── feature_engineering.py    # Feature combination
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── clustering.py             # Clustering algorithms
-│   │   ├── recommender.py            # Recommendation engine
-│   │   └── utils.py                  # Helper functions
-│   └── app/
-│       ├── __init__.py
-│       └── streamlit_app.py          # Web interface
-├── tests/
-│   ├── __init__.py
-│   ├── test_data_loader.py
-│   └── test_recommender.py
-├── config/
-│   ├── config.yaml                   # Configuration parameters
-│   └── api_keys_template.env         # API key template
-├── docs/
-│   ├── presentation.md               # Presentation outline
-│   └── project_report.md             # Final report
-├── scripts/
-│   ├── download_data.py              # MET API data collection
-│   ├── extract_features.py           # Feature extraction pipeline
-│   └── train_models.py               # Model training script
-├── .gitignore
-├── README.md
-├── requirements.txt
-├── environment.yml
-└── LICENSE
-```
-
----
-
-## 🚀 Installation
-
-### **Prerequisites**
-- Python 3.9 or higher
-- Google Cloud account (for Vision API)
-- Git
-
-### **Setup**
-
-1. **Clone the repository:**
+2. Create local env file:
 ```bash
-git clone https://github.com/romane-lg/Met_ML_Exhibitions.git
-cd Met_ML_Exhibitions
+copy .env.example .env
 ```
+3. Set credentials in `.env`:
+- `GOOGLE_APPLICATION_CREDENTIALS`
+- `GOOGLE_CLOUD_PROJECT`
 
-2. **Create virtual environment:**
+## Usage
+### Automatic Startup Behavior
+- On API and Streamlit startup, the project checks for required artifacts in `artifacts/`.
+- If artifacts are missing, it auto-runs the feature build once.
+- If Vision output is missing and credentials are not available, the app shows a clear message to place the key at `config/service_account.json` and set `GOOGLE_APPLICATION_CREDENTIALS` in `.env`.
+
+### Quickstart (Consumer)
+Use this when artifacts are already present and you do not want to call Google Vision.
+1. Install dependencies:
 ```bash
-# Using conda
-conda env create -f environment.yml
-conda activate met-curator
-
-# OR using venv
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
+make setup
 ```
-
-3. **Set up API keys:**
+2. Ensure `.env` contains:
+- `MET_ENABLE_VISION=false`
+3. Start app:
 ```bash
-# Copy the template
-cp config/api_keys_template.env config/.env
-
-# Edit config/.env and add your Google Vision API key
-# GOOGLE_VISION_API_KEY=your_api_key_here
+make streamlit
 ```
-
-4. **Download data (if not already done):**
+4. Optional API service:
 ```bash
-python scripts/download_data.py
+make serve
 ```
 
----
-
-## 💻 Usage
-
-### **1. Run Exploratory Data Analysis**
+### Rebuild Pipeline (Maintainer)
+Use this only when you want to regenerate recommendation artifacts.
+1. Set in `.env`:
+- `MET_ENABLE_VISION=true`
+- `GOOGLE_APPLICATION_CREDENTIALS=<service-account-path>`
+- `GOOGLE_CLOUD_PROJECT=<project-id>`
+- Put your service account file at `config/service_account.json`
+2. Build features:
 ```bash
-jupyter notebook notebooks/01_data_exploration.ipynb
+make build-features
 ```
-
-### **2. Extract Features**
+3. Optional ranker retraining:
 ```bash
-# Extract image features with Google Vision API
-python scripts/extract_features.py --type image
-
-# Extract text features
-python scripts/extract_features.py --type text
+make train-ranker
 ```
-
-### **3. Train Models**
+4. Start Streamlit/API:
 ```bash
-python scripts/train_models.py --config config/config.yaml
+make streamlit
+make serve
 ```
 
-### **4. Launch Streamlit App**
+### Quality Checks Before PR
 ```bash
-streamlit run src/app/streamlit_app.py
+make format
+make lint
+make type
+make test
 ```
 
-Open your browser at `http://localhost:8501`
+## Operating Modes
+### Consumer Mode (no API key required)
+- Use committed artifacts only.
+- Keep `MET_ENABLE_VISION=false` (default in `.env.example`).
+- Run app/services without rebuilding features:
+  - `make serve`
+  - `make streamlit`
 
-### **5. Run Tests**
+### Maintainer Mode (API key required)
+- Rebuild features using Google Vision API.
+- Set:
+  - `MET_ENABLE_VISION=true`
+  - `GOOGLE_APPLICATION_CREDENTIALS=<path-to-service-account-json>`
+- Run:
+  - `make build-features`
+  - optional `make train-ranker`
+- Script behavior is fail-fast: if Vision is enabled and credentials are missing, build exits with a clear error.
+
+## Commands
+- `make setup`: install/update dependencies with `uv`.
+- `make lint`: run `ruff` checks.
+- `make format`: run `ruff format`.
+- `make type`: run `ty` checks.
+- `make test`: run unit tests.
+- `make coverage`: run tests with coverage + HTML report.
+- `make build-features`: generate/reuse cached features.
+- `make train-ranker`: train ranker.
+- `make serve`: run FastAPI at `http://localhost:8000`.
+- `make streamlit`: run Streamlit at `http://localhost:8501`.
+
+## VS Code One-Click Run
+- Shared run profiles: `.vscode/launch.json`
+  - `Build Features`
+  - `Train Ranker`
+  - `Run Streamlit App`
+  - `Run API (Uvicorn)`
+  - `Run API + Streamlit`
+- Shared tasks: `.vscode/tasks.json`
+  - restart API/Streamlit
+  - build features
+  - train ranker
+  - run tests
+- Launch profiles are pinned to project interpreter:
+  - `${workspaceFolder}\\.venv\\Scripts\\python.exe`
+
+## Troubleshooting
+- `Recommender not loaded`: run `make build-features` first or verify `artifacts/` exists.
+- `Vision credential errors`: set `MET_ENABLE_VISION=false` for consumer mode, or provide valid service account for maintainer mode.
+- Missing dependencies: run `make setup`.
+
+## Docker
+Run API and Streamlit together:
 ```bash
-pytest tests/ -v
+docker compose up --build
 ```
 
----
+## API
+- `GET /health`
+- `POST /recommendations/theme`
+  - body: `{ "theme": "ancient egypt", "k": 10, "min_similarity": 0.2 }`
 
-## 📈 Results
+## Streamlit Features
+- Themes (1 to 7)
+- Pieces per exhibition (5 to 10)
+- Minimum similarity threshold with error messaging
+- Optional colors/styles/year-range filters
+- Image display and per-theme grouping
+- User guidance text for dataset coverage limitations
 
-*(To be updated after model training)*
+## Ranking Pipeline
+- Stage 1 retrieval: cosine similarity over combined embeddings.
+- Stage 2 reranking (if model exists): LightGBM reranker.
+- Final score: calibrated to `0..1` for display consistency.
+- Fallback: if ranker input shape mismatches, system falls back to cosine scores.
 
-**Expected Metrics:**
-- **Clustering Quality:** Silhouette Score > 0.5
-- **Recommendation Relevance:** NDCG@10 > 0.7
-- **Time Savings:** 60%+ reduction in manual curation time
-- **User Satisfaction:** Survey scores (if applicable)
+## Testing
+Current test suite includes:
+- data loader validation
+- recommender behavior and coherence
+- API health + theme endpoint
+- feature builder helpers
 
-**Sample Exhibition Output:**
+Run:
+```bash
+make test
+make coverage
 ```
-Exhibition 1: Ancient Egyptian Artifacts (25 pieces)
-- Sarcophagus of Henhenet (Similarity: 0.95)
-- Book of the Dead of Imhotep (Similarity: 0.92)
-- Statuette of Amenhotep I (Similarity: 0.89)
-...
-```
 
----
+## Security
+- Never commit secrets or credential JSON files.
+- Keep local credentials outside git-tracked files.
 
-## 🤝 Contributing
+## GitFlow Workflow
+- Branch model: `main`, `develop`, `feature/*`, `release/*`, `hotfix/*`.
+- Work on `feature/*`, merge into `develop`.
+- Release from `release/*` into `main` and back to `develop`.
+- Tag releases (`vX.Y.Z`).
 
-This is an academic project for INSY 674 - Enterprise Data Science at McGill University.
-
-**Development Workflow:**
-1. Create a feature branch: `git checkout -b feature/your-feature`
-2. Make changes and commit: `git commit -m "Add feature"`
-3. Push to branch: `git push origin feature/your-feature`
-4. Create Pull Request for team review
-
-**Best Practices:**
-- Write docstrings for all functions
-- Add unit tests for new features
-- Update documentation as needed
-- Never commit API keys or large data files
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-
----
-
-
-**Last Updated:** February 5, 2026  
-**Course:** INSY 674 - Enterprise Data Science, Winter 2026  
-**Institution:** McGill University - Desautels Faculty of Management
+## Data Commit Policy
+Data is currently present for bootstrap reproducibility.
+After bootstrap, avoid committing new raw data updates.
