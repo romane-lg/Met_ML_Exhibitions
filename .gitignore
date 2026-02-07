@@ -115,3 +115,10 @@ tmp/
 
 # Keep structure files
 !.gitkeep
+
+# After initial bootstrap commit, avoid new/updated raw data commits
+data/raw/
+artifacts/
+
+
+config/service_account.json
