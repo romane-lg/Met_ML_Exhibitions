@@ -1,77 +1,44 @@
-"""
-Test recommendation system.
-"""
-
-import pytest
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import sys
-
-# Add src to path
-sys.path.append(str(Path(__file__).parent.parent))
 
 from src.models import ExhibitionRecommender
 
 
-def test_recommender_initialization():
-    """Test recommender initialization."""
-    # Create sample data
-    n_artworks = 50
-    n_features = 20
-    
-    features = np.random.rand(n_artworks, n_features)
-    metadata = pd.DataFrame({
-        'objectID': range(n_artworks),
-        'title': [f'Artwork {i}' for i in range(n_artworks)],
-        'department': ['Dept A'] * 25 + ['Dept B'] * 25
-    })
-    
-    recommender = ExhibitionRecommender(features, metadata)
-    
-    assert recommender.features.shape == (n_artworks, n_features)
-    assert len(recommender.metadata) == n_artworks
-    assert recommender.similarity_matrix.shape == (n_artworks, n_artworks)
+def make_recommender() -> ExhibitionRecommender:
+    meta = pd.DataFrame(
+        {
+            "objectID": [1, 2, 3, 4],
+            "title": ["Egypt Head", "Egypt Vase", "Portrait A", "Portrait B"],
+            "artist": ["x", "y", "z", "w"],
+            "department": ["Egyptian Art", "Egyptian Art", "Paintings", "Paintings"],
+            "objectDate": ["100", "120", "1800", "1810"],
+            "medium": ["stone", "clay", "oil", "oil"],
+            "image_path": ["images/1.jpg", "images/2.jpg", "images/3.jpg", "images/4.jpg"],
+        }
+    )
+
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    docs = ["egypt head", "egypt vase", "portrait painting", "portrait drawing"]
+    vec = TfidfVectorizer().fit(docs)
+    embeddings = vec.transform(docs).toarray().astype(np.float32)
+    return ExhibitionRecommender(embeddings, meta, vec)
 
 
-def test_recommend_for_theme():
-    """Test theme-based recommendations."""
-    n_artworks = 50
-    features = np.random.rand(n_artworks, 20)
-    
-    metadata = pd.DataFrame({
-        'objectID': range(n_artworks),
-        'title': [f'Artwork {i}' for i in range(n_artworks)],
-        'department': ['Egyptian Art'] * 10 + ['European Paintings'] * 40
-    })
-    
-    recommender = ExhibitionRecommender(features, metadata)
-    
-    # Request Egyptian theme
-    results = recommender.recommend_for_theme('egyptian', n_recommendations=15)
-    
-    assert len(results) <= 15
-    assert 'similarity_score' in results.columns
+def test_recommend_for_theme_returns_scores():
+    rec = make_recommender()
+    out = rec.recommend_for_theme("egypt", n_recommendations=2)
+    assert len(out) == 2
+    assert "score" in out.columns
 
 
-def test_coherence_evaluation():
-    """Test coherence score calculation."""
-    n_artworks = 20
-    features = np.random.rand(n_artworks, 10)
-    
-    metadata = pd.DataFrame({
-        'objectID': range(n_artworks),
-        'title': [f'Art {i}' for i in range(n_artworks)]
-    })
-    
-    recommender = ExhibitionRecommender(features, metadata)
-    
-    # Test with a subset
-    artwork_ids = [0, 1, 2, 3, 4]
-    coherence = recommender.evaluate_coherence(artwork_ids)
-    
-    assert 0 <= coherence <= 1
+def test_recommend_exhibitions_splits_themes():
+    rec = make_recommender()
+    out = rec.recommend_exhibitions(["egypt", "portrait"], max_pieces_per_exhibition=2)
+    assert set(out.keys()) == {"egypt", "portrait"}
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+def test_coherence_range():
+    rec = make_recommender()
+    score = rec.evaluate_coherence([1, 2])
+    assert 0.0 <= score <= 1.0
