@@ -1,264 +1,192 @@
-"""
-Image feature extraction using Google Vision API.
+from __future__ import annotations
 
-This module provides functions to extract visual features from artwork images
-using the Google Cloud Vision API.
-"""
-
-import os
+import math
+import re
+import unicodedata
 from pathlib import Path
-from typing import Dict, List, Optional
-import logging
-from google.cloud import vision
-from google.oauth2 import service_account
+from typing import Any
+
 import pandas as pd
-from dotenv import load_dotenv
 
-logger = logging.getLogger(__name__)
+from src.features.nlp_utils import tokenize_text
+from src.loaders import VisionAPILoader
 
-# Load environment variables
-load_dotenv('config/.env')
+
+def normalize_vision_text(text: str) -> str:
+    normalized = unicodedata.normalize("NFKC", str(text)).lower()
+    normalized = re.sub(r"[^a-z0-9\s]", " ", normalized)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def tokenize_clean(text: str) -> list[str]:
+    return tokenize_text(normalize_vision_text(text), min_len=1)
+
+
+def clean_vision_response(features: dict[str, Any]) -> dict[str, Any]:
+    cleaned: dict[str, Any] = {
+        "labels": [],
+        "objects": [],
+        "colors": [],
+        "web_entities": [],
+        "text": "",
+    }
+
+    for item in features.get("labels", []) or []:
+        description = " ".join(tokenize_clean(item.get("description", "")))
+        if description:
+            cleaned["labels"].append({"description": description, "score": float(item.get("score", 0.0))})
+
+    for item in features.get("objects", []) or []:
+        name = " ".join(tokenize_clean(item.get("name", "")))
+        if name:
+            out = {"name": name, "score": float(item.get("score", 0.0))}
+            if "bbox" in item:
+                out["bbox"] = item["bbox"]
+            cleaned["objects"].append(out)
+
+    for item in features.get("web_entities", []) or []:
+        entity = " ".join(tokenize_clean(item.get("entity", "")))
+        if entity:
+            cleaned["web_entities"].append({"entity": entity, "score": float(item.get("score", 0.0))})
+
+    cleaned["text"] = " ".join(tokenize_clean(features.get("text", "")))
+
+    for item in features.get("colors", []) or []:
+        color = item.get("color", {}) or {}
+        try:
+            red = int(color.get("red"))
+            green = int(color.get("green"))
+            blue = int(color.get("blue"))
+        except (TypeError, ValueError):
+            continue
+        cleaned["colors"].append(
+            {
+                "color": {"red": red, "green": green, "blue": blue},
+                "score": float(item.get("score", 0.0)),
+                "pixel_fraction": float(item.get("pixel_fraction", 0.0)),
+            }
+        )
+
+    return cleaned
+
+
+def vision_tokens_from_features(features: dict[str, Any], include_rgb: bool = True) -> list[str]:
+    tokens: list[str] = []
+    for item in features.get("labels", []):
+        tokens.extend(tokenize_clean(item.get("description", "")))
+    for item in features.get("objects", []):
+        tokens.extend(tokenize_clean(item.get("name", "")))
+    for item in features.get("web_entities", []):
+        tokens.extend(tokenize_clean(item.get("entity", "")))
+    tokens.extend(tokenize_clean(features.get("text", "")))
+    if include_rgb:
+        for item in features.get("colors", []):
+            color = item.get("color", {})
+            red = color.get("red")
+            green = color.get("green")
+            blue = color.get("blue")
+            if red is None or green is None or blue is None:
+                continue
+            tokens.append(f"rgb_{int(red)}_{int(green)}_{int(blue)}")
+    return list(dict.fromkeys(tokens))
+
+
+def extract_numeric_features(features: dict[str, Any]) -> dict[str, float]:
+    """Extract structured numeric features from raw or cleaned Vision response."""
+    colors = features.get("colors", []) or []
+    color_rows: list[tuple[float, float, float, float]] = []
+    for item in colors:
+        color = item.get("color", {}) or {}
+        try:
+            red = float(color.get("red"))
+            green = float(color.get("green"))
+            blue = float(color.get("blue"))
+            weight = float(item.get("pixel_fraction", 0.0))
+        except (TypeError, ValueError):
+            continue
+        if math.isnan(red) or math.isnan(green) or math.isnan(blue):
+            continue
+        color_rows.append((red, green, blue, weight))
+
+    def _weighted_avg(idx: int) -> float:
+        if not color_rows:
+            return 0.0
+        total_w = sum(max(row[3], 0.0) for row in color_rows)
+        if total_w <= 0:
+            return float(sum(row[idx] for row in color_rows) / len(color_rows))
+        return float(sum(row[idx] * max(row[3], 0.0) for row in color_rows) / total_w)
+
+    label_scores = [float(item.get("score", 0.0)) for item in (features.get("labels", []) or [])]
+    object_scores = [float(item.get("score", 0.0)) for item in (features.get("objects", []) or [])]
+    web_scores = [float(item.get("score", 0.0)) for item in (features.get("web_entities", []) or [])]
+    text_norm = normalize_vision_text(features.get("text", ""))
+    numbers = [float(token) for token in text_norm.split() if token.isdigit()]
+
+    return {
+        "vision_num_labels": float(len(label_scores)),
+        "vision_num_objects": float(len(object_scores)),
+        "vision_num_web_entities": float(len(web_scores)),
+        "vision_label_score_mean": float(sum(label_scores) / len(label_scores)) if label_scores else 0.0,
+        "vision_object_score_mean": float(sum(object_scores) / len(object_scores)) if object_scores else 0.0,
+        "vision_web_score_mean": float(sum(web_scores) / len(web_scores)) if web_scores else 0.0,
+        "vision_avg_red": _weighted_avg(0),
+        "vision_avg_green": _weighted_avg(1),
+        "vision_avg_blue": _weighted_avg(2),
+        "vision_ocr_number_count": float(len(numbers)),
+        "vision_ocr_number_mean": float(sum(numbers) / len(numbers)) if numbers else 0.0,
+    }
 
 
 class ImageFeatureExtractor:
-    """Extract features from images using Google Vision API."""
-    
-    def __init__(self, credentials_path: Optional[str] = None):
-        """
-        Initialize the Vision API client.
-        
-        Parameters
-        ----------
-        credentials_path : str, optional
-            Path to Google Cloud credentials JSON file
-        """
-        if credentials_path:
-            credentials = service_account.Credentials.from_service_account_file(
-                credentials_path
-            )
-            self.client = vision.ImageAnnotatorClient(credentials=credentials)
-        else:
-            # Will use GOOGLE_APPLICATION_CREDENTIALS env variable
-            self.client = vision.ImageAnnotatorClient()
-        
-        logger.info("Initialized Google Vision API client")
-    
-    def extract_features(
-        self,
-        image_path: str,
-        max_results: int = 10
-    ) -> Dict:
-        """
-        Extract features from a single image.
-        
-        Parameters
-        ----------
-        image_path : str
-            Path to the image file
-        max_results : int
-            Maximum number of results per feature type
-            
-        Returns
-        -------
-        dict
-            Dictionary containing extracted features:
-            - labels: List of detected labels with scores
-            - objects: List of detected objects with bounding boxes
-            - colors: Dominant colors
-            - web_entities: Related web entities
-            - text: Detected text in image
-        """
-        image_path = Path(image_path)
-        
-        if not image_path.exists():
-            logger.error(f"Image not found: {image_path}")
-            return {}
-        
-        with open(image_path, 'rb') as image_file:
-            content = image_file.read()
-        
-        image = vision.Image(content=content)
-        
-        # Request multiple feature types
-        features = [
-            vision.Feature(type_=vision.Feature.Type.LABEL_DETECTION, max_results=max_results),
-            vision.Feature(type_=vision.Feature.Type.OBJECT_LOCALIZATION, max_results=max_results),
-            vision.Feature(type_=vision.Feature.Type.IMAGE_PROPERTIES),
-            vision.Feature(type_=vision.Feature.Type.WEB_DETECTION, max_results=max_results),
-            vision.Feature(type_=vision.Feature.Type.TEXT_DETECTION),
-        ]
-        
-        request = vision.AnnotateImageRequest(image=image, features=features)
-        
-        try:
-            response = self.client.annotate_image(request)
-            
-            if response.error.message:
-                logger.error(f"API error: {response.error.message}")
-                return {}
-            
-            features_dict = {
-                'labels': self._extract_labels(response.label_annotations),
-                'objects': self._extract_objects(response.localized_object_annotations),
-                'colors': self._extract_colors(response.image_properties_annotation),
-                'web_entities': self._extract_web_entities(response.web_detection),
-                'text': self._extract_text(response.text_annotations)
-            }
-            
-            return features_dict
-            
-        except Exception as e:
-            logger.error(f"Error processing {image_path}: {e}")
-            return {}
-    
-    def _extract_labels(self, annotations) -> List[Dict]:
-        """Extract label annotations."""
-        return [
-            {'description': label.description, 'score': label.score}
-            for label in annotations
-        ]
-    
-    def _extract_objects(self, annotations) -> List[Dict]:
-        """Extract object localization annotations."""
-        return [
-            {
-                'name': obj.name,
-                'score': obj.score,
-                'bbox': [(v.x, v.y) for v in obj.bounding_poly.normalized_vertices]
-            }
-            for obj in annotations
-        ]
-    
-    def _extract_colors(self, annotation) -> List[Dict]:
-        """Extract dominant colors."""
-        if not annotation:
-            return []
-        
-        return [
-            {
-                'color': {
-                    'red': color.color.red,
-                    'green': color.color.green,
-                    'blue': color.color.blue
-                },
-                'score': color.score,
-                'pixel_fraction': color.pixel_fraction
-            }
-            for color in annotation.dominant_colors.colors[:5]  # Top 5 colors
-        ]
-    
-    def _extract_web_entities(self, detection) -> List[Dict]:
-        """Extract web entities."""
-        if not detection or not detection.web_entities:
-            return []
-        
-        return [
-            {'entity': entity.description, 'score': entity.score}
-            for entity in detection.web_entities
-            if entity.description  # Filter out entities without description
-        ]
-    
-    def _extract_text(self, annotations) -> str:
-        """Extract text from image."""
-        if not annotations:
-            return ""
-        
-        # First annotation contains full text
-        return annotations[0].description if annotations else ""
-    
+    """Adapter that loads raw Vision response and returns cleaned features."""
+
+    def __init__(self, credentials_path: str | None = None):
+        self.loader = VisionAPILoader(credentials_path=credentials_path)
+
+    def extract_features(self, image_path: str, max_results: int = 10) -> dict[str, Any]:
+        raw = self.loader.load_image_features(image_path, max_results=max_results)
+        return clean_vision_response(raw)
+
     def batch_extract(
         self,
-        image_paths: List[str],
+        image_paths: list[str],
         max_results: int = 10,
-        save_path: Optional[str] = None
+        save_path: str | None = None,
     ) -> pd.DataFrame:
-        """
-        Extract features from multiple images.
-        
-        Parameters
-        ----------
-        image_paths : List[str]
-            List of image paths
-        max_results : int
-            Maximum results per feature type
-        save_path : str, optional
-            Path to save results as pickle file
-            
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame with image paths and extracted features
-        """
-        results = []
-        
-        for i, image_path in enumerate(image_paths):
-            logger.info(f"Processing {i+1}/{len(image_paths)}: {image_path}")
-            
-            features = self.extract_features(image_path, max_results)
-            features['image_path'] = str(image_path)
-            
-            results.append(features)
-        
-        df = pd.DataFrame(results)
-        
+        rows: list[dict[str, Any]] = []
+        for path in image_paths:
+            item = self.extract_features(path, max_results=max_results)
+            item["image_path"] = str(path)
+            rows.append(item)
+        frame = pd.DataFrame(rows)
         if save_path:
-            df.to_pickle(save_path)
-            logger.info(f"Saved features to {save_path}")
-        
-        return df
+            frame.to_pickle(save_path)
+        return frame
 
 
 def extract_label_vector(features_df: pd.DataFrame, top_n: int = 50) -> pd.DataFrame:
-    """
-    Convert label features to numerical vectors.
-    
-    Parameters
-    ----------
-    features_df : pd.DataFrame
-        DataFrame with extracted features
-    top_n : int
-        Number of top labels to include
-        
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with label vectors
-    """
     from collections import Counter
-    
-    # Collect all labels
-    all_labels = []
-    for labels in features_df['labels']:
+
+    all_labels: list[str] = []
+    for labels in features_df["labels"]:
         if labels:
-            all_labels.extend([l['description'] for l in labels])
-    
-    # Get top N labels
+            all_labels.extend([item["description"] for item in labels])
     top_labels = [label for label, _ in Counter(all_labels).most_common(top_n)]
-    
-    # Create binary vectors
+
     vectors = []
-    for labels in features_df['labels']:
+    for labels in features_df["labels"]:
         vector = {label: 0 for label in top_labels}
         if labels:
-            for label_info in labels:
-                if label_info['description'] in top_labels:
-                    vector[label_info['description']] = label_info['score']
+            for item in labels:
+                if item["description"] in top_labels:
+                    vector[item["description"]] = item["score"]
         vectors.append(vector)
-    
     return pd.DataFrame(vectors)
 
 
 if __name__ == "__main__":
-    # Example usage
-    logging.basicConfig(level=logging.INFO)
-    
     extractor = ImageFeatureExtractor()
-    
-    # Test on a single image
-    test_image = "data/raw/images/398746.jpg"
-    if Path(test_image).exists():
-        features = extractor.extract_features(test_image)
-        print(f"\nExtracted features from {test_image}:")
-        print(f"Labels: {features.get('labels', [])[:3]}")
-        print(f"Objects: {features.get('objects', [])[:3]}")
-        print(f"Top color: {features.get('colors', [])[:1]}")
+    sample = Path("data/raw/images/398746.jpg")
+    if sample.exists():
+        out = extractor.extract_features(str(sample))
+        print("labels", out.get("labels", [])[:3])
