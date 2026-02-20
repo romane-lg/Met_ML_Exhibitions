@@ -17,6 +17,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.data import load_met_data
 from src.models import ExhibitionRecommender
+from src.features.text_features import extract_all_text_features
 
 # Page configuration
 st.set_page_config(
@@ -38,18 +39,17 @@ def load_data():
 
 
 @st.cache_resource
-def load_recommender(df):
+def load_recommender(_df):
     """Load or create recommender system."""
-    # For MVP, use simple features
-    # TODO: Load actual pre-computed features
-    features = np.random.rand(len(df), 50)
-    
+    text_features = extract_all_text_features(_df)
+    features = np.hstack([text_features['tfidf'], text_features['topics']])
+
     recommender = ExhibitionRecommender(
         features=features,
-        metadata=df,
+        metadata=_df,
         similarity_metric='cosine'
     )
-    
+
     return recommender
 
 
