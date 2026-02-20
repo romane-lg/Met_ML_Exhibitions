@@ -10,7 +10,13 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import sys
+import nltk
 from PIL import Image
+
+nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)
+nltk.download('stopwords', quiet=True)
+nltk.download('wordnet', quiet=True)
 
 # Add src to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
