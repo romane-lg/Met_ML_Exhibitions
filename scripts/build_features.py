@@ -9,7 +9,6 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 
 from src.config import get_settings
@@ -18,6 +17,7 @@ from src.features.image_features import (
     extract_numeric_features,
     vision_tokens_from_features,
 )
+from src.features.text_features import TextFeatureExtractor
 from src.loaders import VisionAPILoader
 
 logger = logging.getLogger(__name__)
@@ -195,16 +195,21 @@ def run_build(limit: int | None = None, force: bool = False, offline: bool = Fal
     if not any(d.strip() for d in docs):
         docs = ["_empty_"] * len(docs)
 
-    vectorizer = TfidfVectorizer(min_df=1, max_features=10000, ngram_range=(1, 2))
-    mat = vectorizer.fit_transform(docs)
-    emb = normalize(mat, norm="l2", axis=1).toarray().astype(np.float32)
+    extractor = TextFeatureExtractor(max_features=5000, ngram_range=(1, 2), min_df=1, max_df=0.95)
+    tfidf_arr = extractor.extract_tfidf_features(pd.Series(docs), fit=True)
+    topic_arr = extractor.extract_topic_features(tfidf_arr, n_topics=10, fit=True)
+    tfidf_norm = normalize(tfidf_arr, norm="l2", axis=1).astype(np.float32)
+    emb = normalize(
+        np.hstack([tfidf_norm, topic_arr.astype(np.float32)]), norm="l2", axis=1
+    ).astype(np.float32)
 
     np.savez_compressed(emb_path, embeddings=emb)
     df.to_csv(meta_path, index=False)
     pd.DataFrame(descriptions).to_csv(artifacts / "descriptions.csv", index=False)
     if numeric_rows:
         pd.DataFrame(numeric_rows).to_csv(artifacts / "numeric_features.csv", index=False)
-    joblib.dump(vectorizer, vec_path)
+    joblib.dump(extractor.tfidf_vectorizer, vec_path)
+    joblib.dump(extractor.lda_model, artifacts / "lda_model.joblib")
     tok_path.write_text(json.dumps(cache, ensure_ascii=True, indent=2), encoding="utf-8")
     if vision_errors:
         pd.DataFrame(vision_errors).to_csv(artifacts / "vision_errors.csv", index=False)

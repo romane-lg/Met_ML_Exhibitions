@@ -12,6 +12,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
 
+from src.features.nlp_utils import tokenize_text
+
 
 @dataclass
 class Recommendation:
@@ -36,11 +38,13 @@ class ExhibitionRecommender:
         ranker: object | None = None,
         numeric_features: np.ndarray | None = None,
         numeric_columns: list[str] | None = None,
+        lda_model: object | None = None,
     ) -> None:
         self.embeddings = normalize(np.asarray(embeddings), norm="l2", axis=1)
         self.metadata = metadata.reset_index(drop=True)
         self.text_vectorizer = text_vectorizer
         self.ranker = ranker
+        self.lda_model = lda_model
         self.numeric_features = (
             np.asarray(numeric_features, dtype=np.float32)
             if numeric_features is not None
@@ -61,6 +65,8 @@ class ExhibitionRecommender:
         text_vectorizer = joblib.load(base / "text_vectorizer.joblib")
         ranker_path = base / "lightgbm_ranker.joblib"
         ranker = joblib.load(ranker_path) if ranker_path.exists() else None
+        lda_path = base / "lda_model.joblib"
+        lda_model = joblib.load(lda_path) if lda_path.exists() else None
         numeric_path = base / "numeric_features.csv"
         if numeric_path.exists():
             numeric = pd.read_csv(numeric_path)
@@ -70,7 +76,7 @@ class ExhibitionRecommender:
         else:
             numeric_columns = []
             numeric_features = None
-        return cls(embeddings, metadata, text_vectorizer, ranker, numeric_features, numeric_columns)
+        return cls(embeddings, metadata, text_vectorizer, ranker, numeric_features, numeric_columns, lda_model)
 
     def recommend_for_theme(
         self,
@@ -153,8 +159,12 @@ class ExhibitionRecommender:
     def _query_vector(self, tokens: list[str]) -> np.ndarray:
         query = " ".join(tokens)
         qvec = self.text_vectorizer.transform([query])
-        qarr = normalize(qvec, norm="l2", axis=1).toarray().astype(np.float32)
-        return qarr.ravel()
+        tfidf_norm = normalize(qvec, norm="l2", axis=1).toarray().astype(np.float32)
+        if self.lda_model is not None:
+            topic_vec = self.lda_model.transform(qvec).astype(np.float32)
+            combined = np.hstack([tfidf_norm, topic_vec])
+            return normalize(combined, norm="l2", axis=1).ravel()
+        return tfidf_norm.ravel()
 
     def _rerank_scores(
         self,
@@ -245,4 +255,4 @@ class ExhibitionRecommender:
 
     @staticmethod
     def _simple_tokenize(text: str) -> list[str]:
-        return [t.lower() for t in text.replace("/", " ").replace(";", " ").split() if t]
+        return tokenize_text(text)
