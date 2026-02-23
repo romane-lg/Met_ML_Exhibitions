@@ -34,6 +34,7 @@ Automated recommendation system for themed MET exhibitions using combined image 
 - `data/raw/images/`: image files referenced by `image_path`.
 - `artifacts/`: generated assets.
 - `artifacts/embeddings.npz`
+- `artifacts/combined_embeddings.pkl`
 - `artifacts/meta.csv`
 - `artifacts/tokens.json`
 - `artifacts/descriptions.csv`
@@ -46,7 +47,7 @@ Automated recommendation system for themed MET exhibitions using combined image 
 1. Install dependencies:
 ```bash
 python -m pip install uv
-python -m uv sync --all-extras
+uv sync --all-extras
 ```
 2. Create local env file:
 ```bash
@@ -89,6 +90,15 @@ Use this only when you want to regenerate recommendation artifacts.
 2. Build features:
 ```bash
 make build-features
+```
+Optional feature-fusion controls:
+```bash
+uv run python -m scripts.build_features \
+  --pca-variance 0.95 \
+  --pca-max-components 256 \
+  --text-weight 1.0 \
+  --vision-weight 1.0 \
+  --numeric-weight 1.0
 ```
 3. Optional ranker retraining:
 ```bash
@@ -134,6 +144,12 @@ make test
 - `make test`: run unit tests.
 - `make coverage`: run tests with coverage + HTML report.
 - `make build-features`: generate/reuse cached features.
+  - Supports optional flags:
+    - `--pca-variance`
+    - `--pca-max-components`
+    - `--text-weight`
+    - `--vision-weight`
+    - `--numeric-weight`
 - `make train-ranker`: train ranker.
 - `make serve`: run FastAPI at `http://localhost:8000`.
 - `make streamlit`: run Streamlit at `http://localhost:8501`.
