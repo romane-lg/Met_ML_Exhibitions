@@ -54,9 +54,14 @@ def clean_vision_response(features: dict[str, Any]) -> dict[str, Any]:
     for item in features.get("colors", []) or []:
         color = item.get("color", {}) or {}
         try:
-            red = int(color.get("red"))
-            green = int(color.get("green"))
-            blue = int(color.get("blue"))
+            red_v = color.get("red")
+            green_v = color.get("green")
+            blue_v = color.get("blue")
+            if red_v is None or green_v is None or blue_v is None:
+                continue
+            red = int(red_v)
+            green = int(green_v)
+            blue = int(blue_v)
         except (TypeError, ValueError):
             continue
         cleaned["colors"].append(
@@ -98,9 +103,14 @@ def extract_numeric_features(features: dict[str, Any]) -> dict[str, float]:
     for item in colors:
         color = item.get("color", {}) or {}
         try:
-            red = float(color.get("red"))
-            green = float(color.get("green"))
-            blue = float(color.get("blue"))
+            red_v = color.get("red")
+            green_v = color.get("green")
+            blue_v = color.get("blue")
+            if red_v is None or green_v is None or blue_v is None:
+                continue
+            red = float(red_v)
+            green = float(green_v)
+            blue = float(blue_v)
             weight = float(item.get("pixel_fraction", 0.0))
         except (TypeError, ValueError):
             continue

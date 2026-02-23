@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Protocol
 
 import joblib
 import numpy as np
@@ -27,6 +28,16 @@ class Recommendation:
     image_path: str | None
 
 
+class Ranker(Protocol):
+    def predict(self, X: np.ndarray) -> np.ndarray: ...
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray: ...
+
+
+class LDAModel(Protocol):
+    def transform(self, X: object) -> np.ndarray: ...
+
+
 class ExhibitionRecommender:
     """Content-based recommender backed by dense combined embeddings."""
 
@@ -38,13 +49,13 @@ class ExhibitionRecommender:
         ranker: object | None = None,
         numeric_features: np.ndarray | None = None,
         numeric_columns: list[str] | None = None,
-        lda_model: object | None = None,
+        lda_model: LDAModel | None = None,
     ) -> None:
         self.embeddings = normalize(np.asarray(embeddings), norm="l2", axis=1)
         self.metadata = metadata.reset_index(drop=True)
         self.text_vectorizer = text_vectorizer
-        self.ranker = ranker
-        self.lda_model = lda_model
+        self.ranker: Ranker | None = ranker
+        self.lda_model: LDAModel | None = lda_model
         self.numeric_features = (
             np.asarray(numeric_features, dtype=np.float32)
             if numeric_features is not None
@@ -54,11 +65,13 @@ class ExhibitionRecommender:
         self.nn = NearestNeighbors(metric="cosine")
         self.nn.fit(self.embeddings)
         self.id_to_idx = {
-            int(row.objectID): idx for idx, row in self.metadata.iterrows() if pd.notna(row.objectID)
+            int(row.objectID): idx
+            for idx, row in self.metadata.iterrows()
+            if pd.notna(row.objectID)
         }
 
     @classmethod
-    def from_artifacts(cls, artifacts_dir: str) -> "ExhibitionRecommender":
+    def from_artifacts(cls, artifacts_dir: str) -> ExhibitionRecommender:
         base = Path(artifacts_dir)
         embeddings = np.load(base / "embeddings.npz")["embeddings"]
         metadata = pd.read_csv(base / "meta.csv")
@@ -72,11 +85,21 @@ class ExhibitionRecommender:
             numeric = pd.read_csv(numeric_path)
             merged = metadata[["objectID"]].merge(numeric, on="objectID", how="left").fillna(0.0)
             numeric_columns = [col for col in merged.columns if col != "objectID"]
-            numeric_features = merged[numeric_columns].to_numpy(dtype=np.float32) if numeric_columns else None
+            numeric_features = (
+                merged[numeric_columns].to_numpy(dtype=np.float32) if numeric_columns else None
+            )
         else:
             numeric_columns = []
             numeric_features = None
-        return cls(embeddings, metadata, text_vectorizer, ranker, numeric_features, numeric_columns, lda_model)
+        return cls(
+            embeddings,
+            metadata,
+            text_vectorizer,
+            ranker,
+            numeric_features,
+            numeric_columns,
+            lda_model,
+        )
 
     def recommend_for_theme(
         self,
@@ -89,8 +112,8 @@ class ExhibitionRecommender:
         qarr = self._query_vector(tokens)
         scores = (self.embeddings @ qarr.T).ravel()
 
+        excluded = set(exclude_ids or [])
         if exclude_ids:
-            excluded = set(exclude_ids)
             mask = self.metadata["objectID"].astype("Int64").isin(excluded)
             scores[mask.to_numpy()] = -1.0
 
@@ -105,6 +128,9 @@ class ExhibitionRecommender:
         for pos, idx in enumerate(ranked):
             if len(rows) >= n_recommendations:
                 break
+            object_id = int(self.metadata.iloc[idx].get("objectID"))
+            if object_id in excluded:
+                continue
             score = float(ranked_scores[pos])
             if score < min_score:
                 continue
@@ -212,7 +238,11 @@ class ExhibitionRecommender:
             return np.zeros((0,), dtype=np.float32)
         vector = np.zeros((len(self.numeric_columns),), dtype=np.float32)
         lower = query.lower()
-        years = [float(tok) for tok in lower.replace("-", " ").split() if tok.isdigit() and 3 <= len(tok) <= 4]
+        years = [
+            float(tok)
+            for tok in lower.replace("-", " ").split()
+            if tok.isdigit() and 3 <= len(tok) <= 4
+        ]
         color_map = {
             "red": (255.0, 0.0, 0.0),
             "blue": (0.0, 0.0, 255.0),

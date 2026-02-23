@@ -43,6 +43,7 @@ This document explains the implementation additions made to productionize the pr
 - Script: `scripts/build_features.py`
 - Output artifacts:
   - `artifacts/embeddings.npz`
+  - `artifacts/combined_embeddings.pkl`
   - `artifacts/meta.csv`
   - `artifacts/tokens.json`
   - `artifacts/descriptions.csv`
@@ -91,6 +92,26 @@ This document explains the implementation additions made to productionize the pr
   - numeric feature differences
 - Added calibrated `0..1` final score output for API/UI consistency.
 - Added safe fallback to base cosine scoring if ranker feature-shape mismatch occurs.
+
+### 5) Production Fusion Artifact (`combined_embeddings.pkl`)
+- Added a dedicated fusion step inside `scripts/build_features.py` that combines:
+  - text TF-IDF features (metadata tokens)
+  - vision TF-IDF features (Vision-derived tokens)
+  - scaled numeric features (metadata + vision numeric signals)
+- Fusion supports modality weights (`text`, `vision`, `numeric`) to tune signal balance.
+- PCA reduction uses explained-variance targeting with an upper bound on max components.
+- Final vectors are L2-normalized before persistence.
+- Artifact is written atomically to avoid partial-file corruption.
+- Stored payload fields:
+  - `object_ids`
+  - `embeddings`
+  - `pca_model`
+  - `numeric_scaler`
+  - `text_vectorizer`
+  - `vision_vectorizer`
+  - `numeric_feature_columns`
+  - `config`
+  - `metrics` (including explained variance and selected component count)
 
 ### Serve Phase
 - API: `src/api/main.py`

@@ -37,10 +37,10 @@ Build and serve themed artwork recommendations using merged image and metadata t
 - Windows/VS Code alternative (recommended for this repo):
   - use `.vscode/launch.json` and `.vscode/tasks.json` one-click entries.
   - direct equivalents:
-    - `python -m uv run python scripts/build_features.py --force`
-    - `python -m uv run python scripts/train_ranker.py`
-    - `python -m uv run uvicorn src.api.main:app --host 0.0.0.0 --port 8000`
-    - `python -m uv run streamlit run src/app/streamlit_app.py --server.port 8501`
+    - `uv run python -m scripts.build_features --force`
+    - `uv run python -m scripts.train_ranker`
+    - `uv run uvicorn src.api.main:app --host 0.0.0.0 --port 8000`
+    - `uv run streamlit run src/app/streamlit_app.py --server.port 8501`
 
 ## VS Code One-Click Run
 - Shared run profiles are in `.vscode/launch.json`.
@@ -56,7 +56,7 @@ Build and serve themed artwork recommendations using merged image and metadata t
   - train ranker
   - run tests
 - First-time setup (required before one-click runs):
-  - `python -m uv sync --all-extras`
+  - `uv sync --all-extras`
 - Launch configs are pinned to project interpreter:
   - `${workspaceFolder}\\.venv\\Scripts\\python.exe`
 

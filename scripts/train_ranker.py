@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 import joblib
 import lightgbm as lgb
@@ -37,23 +38,32 @@ def main() -> None:
     labels = []
     n = len(meta)
     for idx, row in meta.iterrows():
+        idx_i = int(cast(Any, idx))
         dept = row.get("department")
-        positives = [i for i in groups.get(dept, []) if i != idx]
+        positives = [int(i) for i in groups.get(dept, []) if int(i) != idx_i]
         if positives:
             p = int(rng.choice(positives))
-            emb_diff = np.abs(embeddings[idx] - embeddings[p])
-            cosine = np.array([float(np.dot(embeddings[idx], embeddings[p]))], dtype=np.float32)
-            num_diff = np.abs(numeric[idx] - numeric[p]) if numeric.shape[1] > 0 else np.zeros((0,), dtype=np.float32)
+            emb_diff = np.abs(embeddings[idx_i] - embeddings[p])
+            cosine = np.array([float(np.dot(embeddings[idx_i], embeddings[p]))], dtype=np.float32)
+            num_diff = (
+                np.abs(numeric[idx_i] - numeric[p])
+                if numeric.shape[1] > 0
+                else np.zeros((0,), dtype=np.float32)
+            )
             feats.append(np.concatenate([emb_diff, cosine, num_diff]))
             labels.append(1)
 
         for _ in range(2):
             neg = int(rng.integers(0, n))
-            if neg == idx:
+            if neg == idx_i:
                 continue
-            emb_diff = np.abs(embeddings[idx] - embeddings[neg])
-            cosine = np.array([float(np.dot(embeddings[idx], embeddings[neg]))], dtype=np.float32)
-            num_diff = np.abs(numeric[idx] - numeric[neg]) if numeric.shape[1] > 0 else np.zeros((0,), dtype=np.float32)
+            emb_diff = np.abs(embeddings[idx_i] - embeddings[neg])
+            cosine = np.array([float(np.dot(embeddings[idx_i], embeddings[neg]))], dtype=np.float32)
+            num_diff = (
+                np.abs(numeric[idx_i] - numeric[neg])
+                if numeric.shape[1] > 0
+                else np.zeros((0,), dtype=np.float32)
+            )
             feats.append(np.concatenate([emb_diff, cosine, num_diff]))
             labels.append(0)
 
@@ -63,7 +73,8 @@ def main() -> None:
     X = np.vstack(feats)
     y = np.asarray(labels)
 
-    model = lgb.LGBMClassifier(
+    model_cls = getattr(lgb, "LGBMClassifier")
+    model = model_cls(
         n_estimators=200,
         learning_rate=0.05,
         num_leaves=31,
