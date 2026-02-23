@@ -5,10 +5,11 @@ This module provides functions for extracting features from artwork metadata
 using natural language processing techniques.
 """
 
-import pandas as pd
 import numpy as np
-from typing import List, Dict, Optional
 import logging
+from typing import Any, Dict, List, Optional
+
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 
@@ -247,7 +248,7 @@ def extract_all_text_features(
     text_columns: List[str] = ['title', 'artist', 'medium', 'department'],
     n_topics: int = 10,
     save_path: Optional[str] = None
-) -> Dict[str, np.ndarray]:
+) -> Dict[str, Any]:
     """
     Extract all text features from a DataFrame.
     

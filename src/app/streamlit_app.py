@@ -114,6 +114,7 @@ if bootstrap_error:
 if recommender is None:
     st.warning("Artifacts not found and could not be generated.")
     st.stop()
+assert recommender is not None
 
 with st.sidebar:
     st.header("Exhibition Setup")
@@ -153,17 +154,26 @@ if generate:
             exclude_ids=used_ids,
             min_score=min_similarity,
         )
+        if frame.empty:
+            frame = recommender.recommend_for_theme(
+                theme,
+                n_recommendations=pieces,
+                exclude_ids=used_ids,
+                min_score=0.0,
+            )
         frame = score_with_filters(frame, colors, styles, y_min, y_max)
 
         st.subheader(f"Theme: {theme}")
-        if frame.empty or frame["score"].max() < min_similarity:
+        if frame.empty:
             st.error("No similar pieces of art found for this theme.")
             continue
+        if frame["score"].max() < min_similarity:
+            st.warning("Showing best available matches below the selected minimum similarity.")
 
         used_ids.update(int(v) for v in frame["object_id"].tolist())
         cols = st.columns(4)
-        for idx, row in frame.iterrows():
-            with cols[idx % 4]:
+        for col_idx, (_, row) in enumerate(frame.iterrows()):
+            with cols[col_idx % len(cols)]:
                 img = image_path(row.get("image_path"))
                 if img:
                     st.image(img, use_container_width=True)

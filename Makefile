@@ -10,7 +10,7 @@ format:
 	uv run ruff format .
 
 type:
-	uv run ty check .
+	uv run ty check src scripts tests
 
 test:
 	uv run pytest -q
@@ -22,7 +22,7 @@ serve:
 	uv run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
 streamlit:
-	uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+	PYTHONPATH=. uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
 
 build-features:
 	uv run python -m scripts.build_features

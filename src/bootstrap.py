@@ -65,7 +65,7 @@ def ensure_artifacts(settings: Settings) -> BootstrapStatus:
 
     tokens_path = Path(settings.artifacts_dir) / "tokens.json"
     has_vision = _has_vision_tokens(tokens_path)
-    if not has_vision:
+    if settings.enable_vision and not has_vision:
         return BootstrapStatus(
             ready=True,
             built=built,

@@ -5,7 +5,9 @@ import pandas as pd
 import pytest
 
 from scripts.build_features import (
-    atomic_pickle_dump,
+    atomic_pickle_dump,  # wrapper import preserved for CLI compatibility
+)
+from src.features.build_pipeline import (
     build_combined_embeddings_payload,
     build_numeric_feature_matrix,
     build_text,
@@ -126,27 +128,46 @@ def test_build_combined_embeddings_payload_with_missing_vision_docs():
     assert payload["metrics"]["vision_feature_dim"] == 0
 
 
+from typing import Any, cast
+import numpy as np
+from numpy.typing import NDArray
+
 def test_combined_embeddings_payload_is_deterministic_shape_and_components():
-    kwargs = {
-        "object_ids": np.array([1, 2, 3, 4, 5], dtype=np.int64),
-        "text_docs": ["aa bb", "aa cc", "dd ee", "ff gg", "hh ii"],
-        "vision_docs": ["xx yy", "yy zz", "xx", "zz", "xx zz"],
-        "numeric_rows": [
-            {"objectID": 1, "meta_has_year": 1.0},
-            {"objectID": 2, "meta_has_year": 0.0},
-            {"objectID": 3, "meta_has_year": 1.0},
-            {"objectID": 4, "meta_has_year": 0.0},
-            {"objectID": 5, "meta_has_year": 1.0},
-        ],
-        "pca_variance": 0.95,
-        "pca_max_components": 4,
-    }
-    one = build_combined_embeddings_payload(**kwargs)
-    two = build_combined_embeddings_payload(**kwargs)
+    object_ids = np.array([1, 2, 3, 4, 5], dtype=np.int64)
+    text_docs = ["aa bb", "aa cc", "dd ee", "ff gg", "hh ii"]
+    vision_docs = ["xx yy", "yy zz", "xx", "zz", "xx zz"]
+    numeric_rows = [
+        {"objectID": 1, "meta_has_year": 1.0},
+        {"objectID": 2, "meta_has_year": 0.0},
+        {"objectID": 3, "meta_has_year": 1.0},
+        {"objectID": 4, "meta_has_year": 0.0},
+        {"objectID": 5, "meta_has_year": 1.0},
+    ]
 
-    assert one["embeddings"].shape == two["embeddings"].shape
-    assert one["metrics"]["selected_components"] == two["metrics"]["selected_components"]
+    one = build_combined_embeddings_payload(
+        object_ids=object_ids,
+        text_docs=text_docs,
+        vision_docs=vision_docs,
+        numeric_rows=numeric_rows,
+        pca_variance=0.95,
+        pca_max_components=4,
+    )
+    two = build_combined_embeddings_payload(
+        object_ids=object_ids,
+        text_docs=text_docs,
+        vision_docs=vision_docs,
+        numeric_rows=numeric_rows,
+        pca_variance=0.95,
+        pca_max_components=4,
+    )
 
+    one_embeddings = cast(NDArray[np.floating], one["embeddings"])
+    two_embeddings = cast(NDArray[np.floating], two["embeddings"])
+    one_metrics = cast(dict[str, Any], one["metrics"])
+    two_metrics = cast(dict[str, Any], two["metrics"])
+
+    assert one_embeddings.shape == two_embeddings.shape
+    assert one_metrics["selected_components"] == two_metrics["selected_components"]
 
 def test_atomic_pickle_dump_writes_expected_schema(tmp_path):
     payload = build_combined_embeddings_payload(
