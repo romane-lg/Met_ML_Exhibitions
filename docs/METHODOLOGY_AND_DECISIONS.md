@@ -38,6 +38,28 @@ This document explains the implementation additions made to productionize the pr
 - Lower onboarding cost for new contributors.
 
 ## Runtime Architecture
+### Data Collection Strategy
+- Data collection uses the MET public API with the same endpoint flow:
+  - `/search?hasImages=true&q=...`
+  - `/objects/{objectID}`
+  - `primaryImage` download
+- To improve coverage and reduce theme bias, collection is balanced across theme buckets:
+  - portraits/people
+  - landscape/nature
+  - religion/myth
+  - architecture/city
+  - objects/decorative arts
+  - abstract/patterns
+- Safety and reliability controls:
+  - deduplicate by `objectID`
+  - skip invalid metadata or broken images
+  - retry failed API/image requests with backoff
+  - continue-on-error behavior to avoid full-run failure
+- Outputs remain compatible with existing pipeline contracts:
+  - `data/raw/met_data.csv`
+  - `data/raw/images/`
+  - same downstream-required columns
+
 ### Build Phase
 - Input: `data/raw/met_data.csv`, `data/raw/images/`
 - Script: `scripts/build_features.py`
@@ -49,11 +71,14 @@ This document explains the implementation additions made to productionize the pr
   - `artifacts/descriptions.csv`
   - `artifacts/numeric_features.csv`
   - `artifacts/text_vectorizer.joblib`
+  - `artifacts/embedding_backend.json`
+  - `artifacts/clip_metadata.joblib` (CLIP backend only)
 
 ### Startup Bootstrap
 - API and Streamlit both run a startup bootstrap check.
-- Required artifacts are validated (`embeddings.npz`, `meta.csv`, `tokens.json`, `text_vectorizer.joblib`).
-- If missing, the app attempts to build them automatically.
+- Required artifacts are validated (`embeddings.npz`, `meta.csv`, `tokens.json`, and backend-specific metadata).
+- Startup defaults to inference-only mode: if artifacts are missing, startup returns a clear setup error.
+- Optional maintainer override: `MET_AUTO_BUILD_ON_STARTUP=true` allows startup to trigger rebuild.
 - If Google Vision output is missing and credentials are not configured, startup surfaces a clear message to add `config/service_account.json` and set `.env` values.
 
 ### Ranker Phase (optional)
@@ -113,6 +138,26 @@ This document explains the implementation additions made to productionize the pr
   - `config`
   - `metrics` (including explained variance and selected component count)
 
+### 6) Dual Embedding Backends (TF-IDF and CLIP)
+- The project now supports two retrieval backends:
+  - `tfidf` (legacy baseline)
+  - `clip` (OpenCLIP-based multimodal retrieval vectors)
+- The project also supports `clip_tuned`:
+  - CLIP text-adapter checkpoint applied at embedding/query time
+  - artifact-isolated build path (`artifacts_clip_tuned`)
+  - same runtime API surface as other backends
+- Backend selection is explicit (`MET_EMBEDDING_BACKEND` or CLI `--embedding-backend`).
+- Backward compatibility is preserved for existing TF-IDF artifacts.
+- New metadata file `embedding_backend.json` records which backend produced the artifacts.
+
+### 7) CLIP Fine-Tuning Safety (v1)
+- Fine-tuning uses a minimal text-adapter training stage (`scripts/train_clip_lora.py`).
+- Data split manifests (`train/val/test`) are saved for reproducibility.
+- Checkpoint selection uses a portrait non-regression guardrail:
+  - optimize overall ranking metric
+  - reject tuned checkpoint if portrait slice drops beyond threshold
+- Deployment stays inference-only (no live training at startup).
+
 ### Serve Phase
 - API: `src/api/main.py`
 - UI: `src/app/streamlit_app.py`
@@ -128,6 +173,11 @@ The project uses a hybrid of image-derived and text-derived signals because them
 - Works well with sparse metadata fields and short descriptions.
 - Easy to inspect for debugging query mismatch.
 
+### Why Add CLIP
+- CLIP places text and images in a shared semantic vector space.
+- This enables stronger cross-modal retrieval (text query to image-aware representation).
+- It reduces dependence on handcrafted token overlap for semantic matching.
+
 ### Why Vision-Derived Tokens for Image Signals
 - Uses labels, localized objects, web entities, OCR text, and color signatures from Vision.
 - Produces interpretable tokens that can be merged with text features.
@@ -138,6 +188,16 @@ The project uses a hybrid of image-derived and text-derived signals because them
 - Single vector space simplifies retrieval and scoring.
 - Preserves compatibility with nearest-neighbor search and ranker features.
 - Supports both API and Streamlit from the same artifact set.
+
+### Tradeoff Table (Legacy vs CLIP)
+| Dimension | TF-IDF/LDA (Legacy) | OpenCLIP (New) |
+|---|---|---|
+| Interpretability | High (token weights visible) | Medium (dense learned features) |
+| Semantic generalization | Moderate | Stronger |
+| Build cost (CPU) | Lower | Higher |
+| Startup latency | Similar (artifact load) | Similar (artifact load) |
+| Dependency complexity | Lower | Higher (`torch`, `open_clip_torch`) |
+| Backward compatibility | Existing baseline | Added as optional backend |
 
 ### Why Cosine Similarity
 - Robust to magnitude differences in sparse/high-dimensional vectors.
@@ -187,6 +247,12 @@ Environment variables expected in `.env`:
 - `MET_IMAGES_DIR`
 - `MET_ARTIFACTS_DIR`
 - `MET_ENABLE_VISION`
+- `MET_EMBEDDING_BACKEND` (`tfidf` or `clip`)
+- `MET_AUTO_BUILD_ON_STARTUP` (`false` by default)
+- `MET_CLIP_MODEL_NAME`
+- `MET_CLIP_PRETRAINED`
+- `MET_CLIP_DEVICE`
+- `MET_CLIP_BATCH_SIZE`
 
 Template reference: `.env.example`
 

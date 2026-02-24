@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import pandas as pd
 import streamlit as st
+
+# Ensure `src` imports resolve when Streamlit is launched outside repo-root PYTHONPATH.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from src.bootstrap import ensure_artifacts
 from src.config import get_settings
@@ -24,6 +30,24 @@ STOPWORDS = {
     "from",
 }
 SETTINGS = get_settings()
+SUPPORTED_THEME_TYPES = [
+    "portraits/people",
+    "landscape/nature",
+    "religion/myth",
+    "architecture/city",
+    "objects/decorative arts",
+    "abstract/patterns",
+]
+EXAMPLE_THEME_PROMPTS = [
+    "portrait, baroque painting, 17th century",
+    "landscape, river scenes, 19th century",
+    "religious art, gilded icons, byzantine",
+    "architecture, temple, ancient world",
+    "decorative arts, floral textile, islamic",
+    "abstract, geometric pattern, modern",
+    "ceramic vessels, blue and white, east asian",
+    "mythology, heroic figures, renaissance",
+]
 
 
 @st.cache_resource
@@ -33,6 +57,9 @@ def load_recommender() -> tuple[ExhibitionRecommender | None, str | None, str | 
     if not status.ready:
         return None, status.error, status.warning
     recommender = ExhibitionRecommender.from_artifacts(settings.artifacts_dir)
+    if getattr(recommender, "embedding_backend", "") in {"clip", "clip_tuned"}:
+        # Warm CLIP model on startup to avoid first-query UI stalls.
+        recommender._get_clip_encoder()
     return recommender, status.error, status.warning
 
 
@@ -115,13 +142,28 @@ if recommender is None:
     st.warning("Artifacts not found and could not be generated.")
     st.stop()
 assert recommender is not None
+st.caption(
+    "Backend: "
+    f"`{getattr(recommender, 'embedding_backend', 'unknown')}`"
+    " | Artifacts: "
+    f"`{SETTINGS.artifacts_dir}`"
+    " | Embeddings shape: "
+    f"`{recommender.embeddings.shape}`"
+)
 
 with st.sidebar:
     st.header("Exhibition Setup")
     st.caption(
-        "This recommender works best when your theme uses attributes represented in the collection "
-        "(period, material, style, subject, color, culture, or department). If results are weak, "
-        "refine your prompt with concrete descriptors that combine what it is, when, and how it looks."
+        "This recommender works best with concrete prompts using subject + style/material + period/culture."
+    )
+    st.markdown("**Supported Theme Types**")
+    st.caption(", ".join(SUPPORTED_THEME_TYPES))
+    st.markdown("**Example Prompts**")
+    for example in EXAMPLE_THEME_PROMPTS:
+        st.caption(f"- {example}")
+    st.caption(
+        "Prompt tip: use 1-3 themes with specific descriptors. "
+        "If results are weak, refine with material, century, culture, or style."
     )
     themes_input = st.text_area(
         "Themes (comma-separated)",
@@ -136,48 +178,60 @@ with st.sidebar:
     generate = st.button("Generate Exhibitions")
 
 if generate:
-    themes = [t.strip() for t in themes_input.split(",") if t.strip()]
-    if not (1 <= len(themes) <= 7):
-        st.error("Please enter between 1 and 7 themes.")
-        st.stop()
+    try:
+        themes = [t.strip() for t in themes_input.split(",") if t.strip()]
+        if not (1 <= len(themes) <= 7):
+            st.error("Please enter between 1 and 7 themes.")
+            st.stop()
 
-    colors = [c.strip().lower() for c in colors_input.split(",") if c.strip()]
-    styles = [s.strip().lower() for s in styles_input.split(",") if s.strip()]
-    y_min = None if year_min == 0 else int(year_min)
-    y_max = None if year_max == 0 else int(year_max)
+        colors = [c.strip().lower() for c in colors_input.split(",") if c.strip()]
+        styles = [s.strip().lower() for s in styles_input.split(",") if s.strip()]
+        y_min = None if year_min == 0 else int(year_min)
+        y_max = None if year_max == 0 else int(year_max)
 
-    used_ids: set[int] = set()
-    for theme in themes:
-        frame = recommender.recommend_for_theme(
-            theme,
-            n_recommendations=pieces,
-            exclude_ids=used_ids,
-            min_score=min_similarity,
-        )
-        if frame.empty:
-            frame = recommender.recommend_for_theme(
-                theme,
-                n_recommendations=pieces,
-                exclude_ids=used_ids,
-                min_score=0.0,
-            )
-        frame = score_with_filters(frame, colors, styles, y_min, y_max)
-
-        st.subheader(f"Theme: {theme}")
-        if frame.empty:
-            st.error("No similar pieces of art found for this theme.")
-            continue
-        if frame["score"].max() < min_similarity:
-            st.warning("Showing best available matches below the selected minimum similarity.")
-
-        used_ids.update(int(v) for v in frame["object_id"].tolist())
-        cols = st.columns(4)
-        for col_idx, (_, row) in enumerate(frame.iterrows()):
-            with cols[col_idx % len(cols)]:
-                img = image_path(row.get("image_path"))
-                if img:
-                    st.image(img, use_container_width=True)
-                st.caption(
-                    f"{row.get('title') or 'Untitled'} | {row.get('artist') or 'Unknown'}"
-                    f" | score={float(row.get('score', 0.0)):.3f}"
+        with st.spinner("Generating recommendations..."):
+            used_ids: set[int] = set()
+            for theme in themes:
+                frame = recommender.recommend_for_theme(
+                    theme,
+                    n_recommendations=pieces,
+                    exclude_ids=used_ids,
+                    min_score=min_similarity,
                 )
+                if frame.empty:
+                    frame = recommender.recommend_for_theme(
+                        theme,
+                        n_recommendations=pieces,
+                        exclude_ids=used_ids,
+                        min_score=0.0,
+                    )
+                frame = score_with_filters(frame, colors, styles, y_min, y_max)
+
+                st.subheader(f"Theme: {theme}")
+                if frame.empty:
+                    st.error(
+                        "No similar pieces found. Try a more specific theme such as "
+                        "'landscape oil 19th century' or add culture/material keywords."
+                    )
+                    continue
+                if frame["score"].max() < min_similarity:
+                    st.warning(
+                        "Showing best available matches below the selected minimum similarity. "
+                        "Refine the theme with style, century, material, or culture for stronger matches."
+                    )
+
+                used_ids.update(int(v) for v in frame["object_id"].tolist())
+                cols = st.columns(4)
+                for col_idx, (_, row) in enumerate(frame.iterrows()):
+                    with cols[col_idx % len(cols)]:
+                        img = image_path(row.get("image_path"))
+                        if img:
+                            st.image(img, use_container_width=True)
+                        shown_score = float(row.get("raw_score", row.get("score", 0.0)))
+                        st.caption(
+                            f"{row.get('title') or 'Untitled'} | {row.get('artist') or 'Unknown'}"
+                            f" | score={shown_score:.3f}"
+                        )
+    except Exception as exc:
+        st.error("Theme generation failed. See details below.")
+        st.exception(exc)
