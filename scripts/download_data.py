@@ -150,15 +150,25 @@ with requests.Session() as session:
             print(f"Skipping object {object_id}: {e}")
             continue
 
-# 3) Export metadata (exactly len(records) rows)
+# 3) Export metadata with strict CSV-to-image consistency checks.
 df = pd.DataFrame(records)
+if not df.empty:
+    df["objectID"] = df["objectID"].astype(str)
+    df = df.drop_duplicates(subset=["objectID"], keep="first").copy()
+    df = df[df["objectID"].apply(lambda oid: (IMG_DIR / f"{oid}.jpg").exists())].copy()
+    df["objectID"] = df["objectID"].astype(int)
+    df["image_path"] = df["objectID"].apply(lambda oid: str(IMG_DIR / f"{oid}.jpg"))
 
 # Safety check: ensure 1000 rows if possible
 if len(df) < TARGET:
-    print(f"Warning: only collected {len(df)} images before running out of candidate IDs.")
+    print(f"Warning: only collected {len(df)} valid image rows before running out of candidate IDs.")
 else:
     df = df.iloc[:TARGET].copy()
 
 df.to_csv(OUTPUT_CSV, index=False)
 
-print(f"Saved {OUTPUT_CSV} with {len(df)} rows and downloaded {len(df)} images to {IMG_DIR}.")
+image_count = len(list(IMG_DIR.glob("*.jpg")))
+print(
+    f"Saved {OUTPUT_CSV} with {len(df)} rows. "
+    f"Current image files in {IMG_DIR}: {image_count}."
+)
