@@ -107,10 +107,21 @@ class ExhibitionRecommender:
         n_recommendations: int = 10,
         exclude_ids: Iterable[int] | None = None,
         min_score: float = 0.0,
+        diversity_lambda: float = 0.75,
+        max_per_artist: int = 2,
+        max_per_department: int = 3,
     ) -> pd.DataFrame:
+        if not (0.0 <= diversity_lambda <= 1.0):
+            raise ValueError("diversity_lambda must be in [0, 1].")
+        if max_per_artist < 1:
+            raise ValueError("max_per_artist must be >= 1.")
+        if max_per_department < 1:
+            raise ValueError("max_per_department must be >= 1.")
+        if n_recommendations < 1:
+            raise ValueError("n_recommendations must be >= 1.")
+
         tokens = self._simple_tokenize(theme_query)
-        qarr = self._query_vector(tokens)
-        scores = (self.embeddings @ qarr.T).ravel()
+        scores = self.score_by_tokens(tokens)
 
         excluded = set(exclude_ids or [])
         if exclude_ids:
@@ -119,25 +130,19 @@ class ExhibitionRecommender:
 
         pool_size = min(len(self.metadata), max(n_recommendations * 8, 80))
         ranked = np.argsort(scores)[::-1][:pool_size]
+        qarr = self._query_vector(tokens)
         reranked_scores = self._rerank_scores(theme_query, qarr, scores, ranked)
         calibrated = self._calibrate_scores(reranked_scores)
-        order = np.argsort(calibrated)[::-1]
-        ranked = ranked[order]
-        ranked_scores = calibrated[order]
-        rows = []
-        for pos, idx in enumerate(ranked):
-            if len(rows) >= n_recommendations:
-                break
-            object_id = int(self.metadata.iloc[idx].get("objectID"))
-            if object_id in excluded:
-                continue
-            score = float(ranked_scores[pos])
-            if score < min_score:
-                continue
-            row = self._row(idx, score)
-            rows.append(row)
-
-        return pd.DataFrame([r.__dict__ for r in rows])
+        return self._select_diverse_recommendations(
+            ranked_indices=ranked,
+            ranked_scores=calibrated,
+            n_recommendations=n_recommendations,
+            min_score=min_score,
+            excluded_ids=excluded,
+            diversity_lambda=diversity_lambda,
+            max_per_artist=max_per_artist,
+            max_per_department=max_per_department,
+        )
 
     def recommend_exhibitions(
         self,
@@ -180,7 +185,8 @@ class ExhibitionRecommender:
         if not tokens:
             return np.zeros(len(self.metadata), dtype=float)
         qarr = self._query_vector(tokens)
-        return (self.embeddings @ qarr.T).ravel()
+        query = qarr.reshape(1, -1)
+        return cosine_similarity(self.embeddings, query).ravel()
 
     def _query_vector(self, tokens: list[str]) -> np.ndarray:
         query = " ".join(tokens)
@@ -232,6 +238,82 @@ class ExhibitionRecommender:
         if max_v - min_v < 1e-8:
             return np.clip(scores, 0.0, 1.0)
         return ((scores - min_v) / (max_v - min_v)).astype(np.float32)
+
+    def _select_diverse_recommendations(
+        self,
+        ranked_indices: np.ndarray,
+        ranked_scores: np.ndarray,
+        n_recommendations: int,
+        min_score: float,
+        excluded_ids: set[int],
+        diversity_lambda: float,
+        max_per_artist: int,
+        max_per_department: int,
+    ) -> pd.DataFrame:
+        score_by_idx = {
+            int(idx): float(score) for idx, score in zip(ranked_indices.tolist(), ranked_scores.tolist())
+        }
+        candidate_indices = [int(idx) for idx in ranked_indices.tolist()]
+        selected: list[int] = []
+        selected_rows: list[Recommendation] = []
+        artist_counts: dict[str, int] = {}
+        department_counts: dict[str, int] = {}
+
+        while candidate_indices and len(selected) < n_recommendations:
+            best_idx: int | None = None
+            best_mmr = -np.inf
+            best_relevance = -np.inf
+
+            for idx in candidate_indices:
+                object_id = int(self.metadata.iloc[idx].get("objectID"))
+                if object_id in excluded_ids:
+                    continue
+                relevance = score_by_idx.get(idx, 0.0)
+                if relevance < min_score:
+                    continue
+
+                item = self.metadata.iloc[idx]
+                artist = str(item.get("artist") or "").strip().lower()
+                department = str(item.get("department") or "").strip().lower()
+                if artist and artist_counts.get(artist, 0) >= max_per_artist:
+                    continue
+                if department and department_counts.get(department, 0) >= max_per_department:
+                    continue
+
+                if not selected:
+                    mmr_score = relevance
+                else:
+                    max_sim_to_selected = max(
+                        float(np.dot(self.embeddings[idx], self.embeddings[chosen])) for chosen in selected
+                    )
+                    mmr_score = (diversity_lambda * relevance) - (
+                        (1.0 - diversity_lambda) * max_sim_to_selected
+                    )
+
+                if mmr_score > best_mmr or (
+                    np.isclose(mmr_score, best_mmr) and relevance > best_relevance
+                ):
+                    best_idx = idx
+                    best_mmr = mmr_score
+                    best_relevance = relevance
+
+            if best_idx is None:
+                break
+
+            selected.append(best_idx)
+            score = score_by_idx.get(best_idx, 0.0)
+            selected_rows.append(self._row(best_idx, score))
+
+            chosen = self.metadata.iloc[best_idx]
+            chosen_artist = str(chosen.get("artist") or "").strip().lower()
+            chosen_department = str(chosen.get("department") or "").strip().lower()
+            if chosen_artist:
+                artist_counts[chosen_artist] = artist_counts.get(chosen_artist, 0) + 1
+            if chosen_department:
+                department_counts[chosen_department] = department_counts.get(chosen_department, 0) + 1
+            candidate_indices = [idx for idx in candidate_indices if idx != best_idx]
+
+        return pd.DataFrame([row.__dict__ for row in selected_rows])
 
     def _query_numeric_features(self, query: str) -> np.ndarray:
         if self.numeric_features.shape[1] == 0:

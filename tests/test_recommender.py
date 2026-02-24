@@ -56,12 +56,17 @@ def test_recommend_for_theme_returns_scores():
     out = rec.recommend_for_theme("egypt", n_recommendations=2)
     assert len(out) == 2
     assert "score" in out.columns
+    assert out["score"].between(0.0, 1.0).all()
 
 
 def test_recommend_exhibitions_splits_themes():
     rec = make_recommender()
-    out = rec.recommend_exhibitions(["egypt", "portrait"], max_pieces_per_exhibition=2)
-    assert set(out.keys()) == {"egypt", "portrait"}
+    out = rec.recommend_exhibitions(
+        ["egypt", "portrait", "vase"], max_pieces_per_exhibition=2, min_similarity=0.0
+    )
+    assert set(out.keys()) == {"egypt", "portrait", "vase"}
+    assert len(out["egypt"]) > 0
+    assert len(out["portrait"]) > 0
 
 
 def test_coherence_range():
@@ -81,6 +86,14 @@ def test_score_by_tokens_empty_returns_zeros():
     out = rec.score_by_tokens([])
     assert np.allclose(out, 0.0)
     assert out.shape == (4,)
+
+
+def test_cosine_similarity_matching_prefers_theme_aligned_items():
+    rec = make_recommender()
+    scores = rec.score_by_tokens(["egypt"])
+    top_two = np.argsort(scores)[::-1][:2]
+    top_ids = {int(rec.metadata.iloc[idx]["objectID"]) for idx in top_two}
+    assert top_ids == {1, 2}
 
 
 def test_query_numeric_features_maps_year_and_color():
@@ -106,6 +119,38 @@ def test_rerank_falls_back_to_base_scores_on_ranker_error():
 
     reranked = rec._rerank_scores("egypt", qarr, base_scores, candidate_indices)
     assert np.allclose(reranked, base_scores[candidate_indices].astype(np.float32))
+
+
+def test_recommend_for_theme_applies_diversity_constraints():
+    meta = pd.DataFrame(
+        {
+            "objectID": [10, 11, 12, 13],
+            "title": ["Egypt A", "Egypt B", "Egypt C", "Egypt D"],
+            "artist": ["same_artist", "same_artist", "other_artist", "third_artist"],
+            "department": ["Egyptian Art", "Egyptian Art", "Egyptian Art", "Sculpture"],
+            "objectDate": ["100", "110", "120", "130"],
+            "medium": ["stone", "stone", "stone", "stone"],
+            "image_path": ["images/10.jpg", "images/11.jpg", "images/12.jpg", "images/13.jpg"],
+        }
+    )
+    docs = ["egypt statue", "egypt relief", "egypt artifact", "egypt sculpture"]
+    vec = TfidfVectorizer().fit(docs)
+    embeddings = vec.transform(docs).toarray().astype(np.float32)
+    rec = ExhibitionRecommender(embeddings, meta, vec)
+
+    out = rec.recommend_for_theme(
+        "egypt",
+        n_recommendations=3,
+        min_score=0.0,
+        max_per_artist=1,
+        max_per_department=2,
+        diversity_lambda=0.7,
+    )
+
+    returned_artists = out["artist"].astype(str).str.lower().tolist()
+    assert returned_artists.count("same_artist") <= 1
+    returned_departments = out["department"].astype(str).str.lower().tolist()
+    assert returned_departments.count("egyptian art") <= 2
 
 
 def test_from_artifacts_loads_numeric_and_ranker(tmp_path):
