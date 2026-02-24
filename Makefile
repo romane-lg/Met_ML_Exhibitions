@@ -1,7 +1,11 @@
-.PHONY: setup lint format type test coverage serve build-features train-ranker evaluate-backends streamlit streamlit-tfidf streamlit-clip
+.PHONY: setup setup-win lint format type test coverage serve build-features train-ranker evaluate-backends streamlit streamlit-tfidf streamlit-clip
 
 setup:
-	uv sync --all-extras
+	mkdir -p .tmp .uv-cache
+	TMP=.tmp TEMP=.tmp UV_CACHE_DIR=.uv-cache uv sync --all-extras
+
+setup-win:
+	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_env.ps1
 
 lint:
 	uv run ruff check .

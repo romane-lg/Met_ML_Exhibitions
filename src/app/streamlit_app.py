@@ -38,10 +38,24 @@ def load_recommender() -> tuple[ExhibitionRecommender | None, str | None, str | 
     status = ensure_artifacts(settings)
     if not status.ready:
         return None, status.error, status.warning
-    recommender = ExhibitionRecommender.from_artifacts(settings.artifacts_dir)
+
+    try:
+        recommender = ExhibitionRecommender.from_artifacts(settings.artifacts_dir)
+    except Exception as exc:
+        return None, f"Failed to load artifacts: {exc}", status.warning
+
     if getattr(recommender, "embedding_backend", "") == "clip":
-        # Warm CLIP model on startup to avoid first-query UI stalls.
-        recommender._get_clip_encoder()
+        try:
+            # Warm CLIP model on startup to avoid first-query UI stalls.
+            recommender._get_clip_encoder()
+        except Exception as exc:
+            return (
+                None,
+                "CLIP initialization failed. Install `open_clip_torch` and `torch`, "
+                f"or rebuild artifacts with TF-IDF backend. Details: {exc}",
+                status.warning,
+            )
+
     return recommender, status.error, status.warning
 
 
