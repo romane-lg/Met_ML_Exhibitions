@@ -12,8 +12,6 @@ project:
 data:
   raw_data_path: "data/raw/met_data.csv"
   images_path: "data/raw/images/"
-  processed_path: "data/processed/"
-  results_path: "data/results/"
 
 # Google Vision API
 vision_api:

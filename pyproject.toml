@@ -1,0 +1,65 @@
+[project]
+name = "Met_ML_Exhibitions"
+version = "0.1.0"
+description = "MET Exhibition AI Curator"
+requires-python = ">=3.11"
+dependencies = [
+  "beautifulsoup4",
+  "fastapi",
+  "gensim",
+  "google-cloud-vision",
+  "joblib",
+  "matplotlib",
+  "nltk",
+  "numpy",
+  "opencv-python",
+  "pandas",
+  "pillow",
+  "plotly",
+  "pydantic-settings",
+  "python-dateutil",
+  "python-dotenv",
+  "pyyaml",
+  "requests",
+  "scikit-learn",
+  "scipy",
+  "seaborn",
+  "sentence-transformers",
+  "spacy",
+  "streamlit",
+  "streamlit-chat",
+  "tqdm",
+  "transformers",
+  "uvicorn[standard]",
+  "lightgbm",
+]
+
+[project.optional-dependencies]
+dev = [
+  "locust",
+  "pytest",
+  "pytest-cov",
+  "ruff",
+  "ty",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "B", "UP", "SIM", "PL"]
+ignore = ["PLR0913", "PLR2004"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=src --cov=scripts --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true
+source = ["src", "scripts"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
