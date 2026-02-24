@@ -30,6 +30,24 @@ STOPWORDS = {
     "from",
 }
 SETTINGS = get_settings()
+SUPPORTED_THEME_TYPES = [
+    "portraits/people",
+    "landscape/nature",
+    "religion/myth",
+    "architecture/city",
+    "objects/decorative arts",
+    "abstract/patterns",
+]
+EXAMPLE_THEME_PROMPTS = [
+    "portrait, baroque painting, 17th century",
+    "landscape, river scenes, 19th century",
+    "religious art, gilded icons, byzantine",
+    "architecture, temple, ancient world",
+    "decorative arts, floral textile, islamic",
+    "abstract, geometric pattern, modern",
+    "ceramic vessels, blue and white, east asian",
+    "mythology, heroic figures, renaissance",
+]
 
 
 @st.cache_resource
@@ -39,7 +57,7 @@ def load_recommender() -> tuple[ExhibitionRecommender | None, str | None, str | 
     if not status.ready:
         return None, status.error, status.warning
     recommender = ExhibitionRecommender.from_artifacts(settings.artifacts_dir)
-    if getattr(recommender, "embedding_backend", "") == "clip":
+    if getattr(recommender, "embedding_backend", "") in {"clip", "clip_tuned"}:
         # Warm CLIP model on startup to avoid first-query UI stalls.
         recommender._get_clip_encoder()
     return recommender, status.error, status.warning
@@ -136,9 +154,16 @@ st.caption(
 with st.sidebar:
     st.header("Exhibition Setup")
     st.caption(
-        "This recommender works best when your theme uses attributes represented in the collection "
-        "(period, material, style, subject, color, culture, or department). If results are weak, "
-        "refine your prompt with concrete descriptors that combine what it is, when, and how it looks."
+        "This recommender works best with concrete prompts using subject + style/material + period/culture."
+    )
+    st.markdown("**Supported Theme Types**")
+    st.caption(", ".join(SUPPORTED_THEME_TYPES))
+    st.markdown("**Example Prompts**")
+    for example in EXAMPLE_THEME_PROMPTS:
+        st.caption(f"- {example}")
+    st.caption(
+        "Prompt tip: use 1-3 themes with specific descriptors. "
+        "If results are weak, refine with material, century, culture, or style."
     )
     themes_input = st.text_area(
         "Themes (comma-separated)",
@@ -184,10 +209,16 @@ if generate:
 
                 st.subheader(f"Theme: {theme}")
                 if frame.empty:
-                    st.error("No similar pieces of art found for this theme.")
+                    st.error(
+                        "No similar pieces found. Try a more specific theme such as "
+                        "'landscape oil 19th century' or add culture/material keywords."
+                    )
                     continue
                 if frame["score"].max() < min_similarity:
-                    st.warning("Showing best available matches below the selected minimum similarity.")
+                    st.warning(
+                        "Showing best available matches below the selected minimum similarity. "
+                        "Refine the theme with style, century, material, or culture for stronger matches."
+                    )
 
                 used_ids.update(int(v) for v in frame["object_id"].tolist())
                 cols = st.columns(4)

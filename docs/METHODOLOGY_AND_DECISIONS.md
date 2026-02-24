@@ -38,6 +38,28 @@ This document explains the implementation additions made to productionize the pr
 - Lower onboarding cost for new contributors.
 
 ## Runtime Architecture
+### Data Collection Strategy
+- Data collection uses the MET public API with the same endpoint flow:
+  - `/search?hasImages=true&q=...`
+  - `/objects/{objectID}`
+  - `primaryImage` download
+- To improve coverage and reduce theme bias, collection is balanced across theme buckets:
+  - portraits/people
+  - landscape/nature
+  - religion/myth
+  - architecture/city
+  - objects/decorative arts
+  - abstract/patterns
+- Safety and reliability controls:
+  - deduplicate by `objectID`
+  - skip invalid metadata or broken images
+  - retry failed API/image requests with backoff
+  - continue-on-error behavior to avoid full-run failure
+- Outputs remain compatible with existing pipeline contracts:
+  - `data/raw/met_data.csv`
+  - `data/raw/images/`
+  - same downstream-required columns
+
 ### Build Phase
 - Input: `data/raw/met_data.csv`, `data/raw/images/`
 - Script: `scripts/build_features.py`
@@ -120,9 +142,21 @@ This document explains the implementation additions made to productionize the pr
 - The project now supports two retrieval backends:
   - `tfidf` (legacy baseline)
   - `clip` (OpenCLIP-based multimodal retrieval vectors)
+- The project also supports `clip_tuned`:
+  - CLIP text-adapter checkpoint applied at embedding/query time
+  - artifact-isolated build path (`artifacts_clip_tuned`)
+  - same runtime API surface as other backends
 - Backend selection is explicit (`MET_EMBEDDING_BACKEND` or CLI `--embedding-backend`).
 - Backward compatibility is preserved for existing TF-IDF artifacts.
 - New metadata file `embedding_backend.json` records which backend produced the artifacts.
+
+### 7) CLIP Fine-Tuning Safety (v1)
+- Fine-tuning uses a minimal text-adapter training stage (`scripts/train_clip_lora.py`).
+- Data split manifests (`train/val/test`) are saved for reproducibility.
+- Checkpoint selection uses a portrait non-regression guardrail:
+  - optimize overall ranking metric
+  - reject tuned checkpoint if portrait slice drops beyond threshold
+- Deployment stays inference-only (no live training at startup).
 
 ### Serve Phase
 - API: `src/api/main.py`
