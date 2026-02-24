@@ -39,6 +39,13 @@ def main() -> None:
     parser.add_argument("--text-weight", type=float, default=1.0)
     parser.add_argument("--vision-weight", type=float, default=1.0)
     parser.add_argument("--numeric-weight", type=float, default=1.0)
+    parser.add_argument("--embedding-backend", choices=["tfidf", "clip"], default="tfidf")
+    parser.add_argument("--clip-model-name", type=str, default="ViT-B-32")
+    parser.add_argument("--clip-pretrained", type=str, default="laion2b_s34b_b79k")
+    parser.add_argument("--clip-device", type=str, default="cpu")
+    parser.add_argument("--clip-batch-size", type=int, default=32)
+    parser.add_argument("--clip-text-weight", type=float, default=0.5)
+    parser.add_argument("--clip-image-weight", type=float, default=0.5)
     args = parser.parse_args()
     run_build(
         limit=args.limit,
@@ -49,6 +56,13 @@ def main() -> None:
         text_weight=args.text_weight,
         vision_weight=args.vision_weight,
         numeric_weight=args.numeric_weight,
+        embedding_backend=args.embedding_backend,
+        clip_model_name=args.clip_model_name,
+        clip_pretrained=args.clip_pretrained,
+        clip_device=args.clip_device,
+        clip_batch_size=args.clip_batch_size,
+        clip_text_weight=args.clip_text_weight,
+        clip_image_weight=args.clip_image_weight,
     )
 
 

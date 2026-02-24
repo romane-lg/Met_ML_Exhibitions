@@ -17,6 +17,7 @@ Automated recommendation system for themed MET exhibitions using combined image 
 
 ## Extended Docs
 - Methodology and design decisions: `docs/METHODOLOGY_AND_DECISIONS.md`
+- CLIP migration summary: `docs/CLIP_MIGRATION_SUMMARY.md`
 - General best practices: `docs/BEST_PRACTICES.md`
 
 ## Architecture
@@ -41,6 +42,8 @@ Automated recommendation system for themed MET exhibitions using combined image 
 - `artifacts/numeric_features.csv`
 - `artifacts/vision_errors.csv` (only created when Vision extraction issues occur)
 - `artifacts/text_vectorizer.joblib`
+- `artifacts/embedding_backend.json`
+- `artifacts/clip_metadata.joblib` (CLIP mode only)
 - `artifacts/lightgbm_ranker.joblib` (optional)
 
 ## Setup
@@ -60,7 +63,9 @@ copy .env.example .env
 ## Usage
 ### Automatic Startup Behavior
 - On API and Streamlit startup, the project checks for required artifacts in `artifacts/`.
-- If artifacts are missing, it auto-runs the feature build once.
+- By default, startup is inference-only and does not auto-build missing artifacts.
+- If artifacts are missing, run `make build-features` explicitly.
+- Optional maintainer override: set `MET_AUTO_BUILD_ON_STARTUP=true` to allow startup rebuild.
 - If Vision output is missing and credentials are not available, the app shows a clear message to place the key at `config/service_account.json` and set `GOOGLE_APPLICATION_CREDENTIALS` in `.env`.
 
 ### Quickstart (Consumer)
@@ -91,14 +96,26 @@ Use this only when you want to regenerate recommendation artifacts.
 ```bash
 make build-features
 ```
-Optional feature-fusion controls:
+Optional TF-IDF feature-fusion controls:
 ```bash
 uv run python -m scripts.build_features \
+  --embedding-backend tfidf \
   --pca-variance 0.95 \
   --pca-max-components 256 \
   --text-weight 1.0 \
   --vision-weight 1.0 \
   --numeric-weight 1.0
+```
+Optional CLIP retrieval build:
+```bash
+uv run python -m scripts.build_features \
+  --embedding-backend clip \
+  --clip-model-name ViT-B-32 \
+  --clip-pretrained laion2b_s34b_b79k \
+  --clip-device cpu \
+  --clip-batch-size 32 \
+  --clip-text-weight 0.5 \
+  --clip-image-weight 0.5
 ```
 3. Optional ranker retraining:
 ```bash
@@ -109,6 +126,11 @@ make train-ranker
 make streamlit
 make serve
 ```
+Single-command backend-specific UI launchers:
+```bash
+make streamlit-tfidf
+make streamlit-clip
+```
 
 ### Quality Checks Before PR
 ```bash
@@ -117,6 +139,24 @@ make lint
 make type
 make test
 ```
+
+### Backend Comparison Metrics (Report Table)
+After building two artifact sets (for example `artifacts_tfidf` and `artifacts_clip`), run:
+```bash
+uv run python -m scripts.evaluate_backends --artifacts artifacts_tfidf artifacts_clip --k 10
+```
+Optional JSON export:
+```bash
+uv run python -m scripts.evaluate_backends \
+  --artifacts artifacts_tfidf artifacts_clip \
+  --k 10 \
+  --json-out artifacts/backend_metrics.json
+```
+This prints:
+- `Recall@10`
+- `NDCG@10`
+- `Artist Coverage`
+- `Department Coverage`
 
 ## Operating Modes
 ### Consumer Mode (no API key required)
@@ -145,14 +185,23 @@ make test
 - `make coverage`: run tests with coverage + HTML report.
 - `make build-features`: generate/reuse cached features.
   - Supports optional flags:
+    - `--embedding-backend` (`tfidf` or `clip`)
     - `--pca-variance`
     - `--pca-max-components`
     - `--text-weight`
     - `--vision-weight`
     - `--numeric-weight`
+    - `--clip-model-name`
+    - `--clip-pretrained`
+    - `--clip-device`
+    - `--clip-batch-size`
+    - `--clip-text-weight`
+    - `--clip-image-weight`
 - `make train-ranker`: train ranker.
 - `make serve`: run FastAPI at `http://localhost:8000`.
 - `make streamlit`: run Streamlit at `http://localhost:8501`.
+- `make streamlit-tfidf`: run Streamlit on TF-IDF artifacts at `http://localhost:8501`.
+- `make streamlit-clip`: run Streamlit on CLIP artifacts at `http://localhost:8501`.
 
 ## VS Code One-Click Run
 - Shared run profiles: `.vscode/launch.json`

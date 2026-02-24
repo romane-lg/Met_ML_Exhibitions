@@ -185,3 +185,48 @@ def test_from_artifacts_loads_numeric_and_ranker(tmp_path):
     rec = ExhibitionRecommender.from_artifacts(str(tmp_path))
     assert rec.numeric_features.shape == (2, 2)
     assert rec.ranker is not None
+
+
+def test_from_artifacts_clip_backend_routes_query_embedding(tmp_path, monkeypatch):
+    meta = pd.DataFrame(
+        {
+            "objectID": [10, 11],
+            "title": ["A", "B"],
+            "artist": ["x", "y"],
+            "department": ["d1", "d2"],
+            "objectDate": ["1900", "1901"],
+            "medium": ["m1", "m2"],
+            "image_path": ["images/10.jpg", "images/11.jpg"],
+        }
+    )
+    emb = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
+    np.savez_compressed(tmp_path / "embeddings.npz", embeddings=emb)
+    meta.to_csv(tmp_path / "meta.csv", index=False)
+    (tmp_path / "tokens.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "embedding_backend.json").write_text(
+        '{"backend":"clip","model_name":"ViT-B-32","pretrained":"laion2b_s34b_b79k","device":"cpu"}',
+        encoding="utf-8",
+    )
+    joblib.dump(
+        {
+            "model_name": "ViT-B-32",
+            "pretrained": "laion2b_s34b_b79k",
+            "device": "cpu",
+            "batch_size": 32,
+        },
+        tmp_path / "clip_metadata.joblib",
+    )
+
+    class DummyClipEncoder:
+        def __init__(self, *args, **kwargs):
+            del args, kwargs
+
+        def encode_texts(self, texts):
+            assert texts
+            return np.array([[1.0, 0.0]], dtype=np.float32)
+
+    monkeypatch.setattr("src.models.recommender.CLIPEncoder", DummyClipEncoder)
+    rec = ExhibitionRecommender.from_artifacts(str(tmp_path))
+    out = rec.recommend_for_theme("egypt", n_recommendations=1, min_score=0.0)
+    assert len(out) == 1
+    assert int(out.iloc[0]["object_id"]) == 10

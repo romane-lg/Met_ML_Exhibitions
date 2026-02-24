@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 import joblib
 import numpy as np
@@ -13,6 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import normalize
 
+from src.features.clip_features import CLIPEncoder
 from src.features.nlp_utils import tokenize_text
 
 
@@ -20,6 +22,7 @@ from src.features.nlp_utils import tokenize_text
 class Recommendation:
     object_id: int
     score: float
+    raw_score: float
     title: str | None
     artist: str | None
     department: str | None
@@ -45,17 +48,28 @@ class ExhibitionRecommender:
         self,
         embeddings: np.ndarray,
         metadata: pd.DataFrame,
-        text_vectorizer: TfidfVectorizer,
+        text_vectorizer: TfidfVectorizer | None = None,
         ranker: object | None = None,
         numeric_features: np.ndarray | None = None,
         numeric_columns: list[str] | None = None,
         lda_model: LDAModel | None = None,
+        embedding_backend: str = "tfidf",
+        clip_model_name: str | None = None,
+        clip_pretrained: str | None = None,
+        clip_device: str = "cpu",
+        clip_batch_size: int = 32,
     ) -> None:
         self.embeddings = normalize(np.asarray(embeddings), norm="l2", axis=1)
         self.metadata = metadata.reset_index(drop=True)
         self.text_vectorizer = text_vectorizer
         self.ranker: Ranker | None = ranker
         self.lda_model: LDAModel | None = lda_model
+        self.embedding_backend = embedding_backend
+        self.clip_model_name = clip_model_name
+        self.clip_pretrained = clip_pretrained
+        self.clip_device = clip_device
+        self.clip_batch_size = clip_batch_size
+        self._clip_encoder: CLIPEncoder | None = None
         self.numeric_features = (
             np.asarray(numeric_features, dtype=np.float32)
             if numeric_features is not None
@@ -75,7 +89,36 @@ class ExhibitionRecommender:
         base = Path(artifacts_dir)
         embeddings = np.load(base / "embeddings.npz")["embeddings"]
         metadata = pd.read_csv(base / "meta.csv")
-        text_vectorizer = joblib.load(base / "text_vectorizer.joblib")
+        backend_meta_path = base / "embedding_backend.json"
+        backend_payload: dict[str, Any] = {}
+        if backend_meta_path.exists():
+            backend_payload = json.loads(backend_meta_path.read_text(encoding="utf-8"))
+        backend = str(backend_payload.get("backend", "tfidf")).strip().lower()
+
+        text_vectorizer: TfidfVectorizer | None = None
+        clip_model_name: str | None = None
+        clip_pretrained: str | None = None
+        clip_device = "cpu"
+        clip_batch_size = 32
+
+        if backend == "clip":
+            clip_meta_path = base / "clip_metadata.joblib"
+            if clip_meta_path.exists():
+                clip_meta = joblib.load(clip_meta_path)
+                clip_model_name = str(clip_meta.get("model_name", "ViT-B-32"))
+                clip_pretrained = str(clip_meta.get("pretrained", "laion2b_s34b_b79k"))
+                clip_device = str(clip_meta.get("device", "cpu"))
+                clip_batch_size = int(clip_meta.get("batch_size", 32))
+            else:
+                clip_model_name = str(backend_payload.get("model_name", "ViT-B-32"))
+                clip_pretrained = str(backend_payload.get("pretrained", "laion2b_s34b_b79k"))
+                clip_device = str(backend_payload.get("device", "cpu"))
+        else:
+            vectorizer_path = base / "text_vectorizer.joblib"
+            if vectorizer_path.exists():
+                text_vectorizer = joblib.load(vectorizer_path)
+            else:
+                raise FileNotFoundError(f"Missing TF-IDF artifact: {vectorizer_path}")
         ranker_path = base / "lightgbm_ranker.joblib"
         ranker = joblib.load(ranker_path) if ranker_path.exists() else None
         lda_path = base / "lda_model.joblib"
@@ -99,6 +142,11 @@ class ExhibitionRecommender:
             numeric_features,
             numeric_columns,
             lda_model,
+            embedding_backend=backend,
+            clip_model_name=clip_model_name,
+            clip_pretrained=clip_pretrained,
+            clip_device=clip_device,
+            clip_batch_size=clip_batch_size,
         )
 
     def recommend_for_theme(
@@ -136,6 +184,7 @@ class ExhibitionRecommender:
         return self._select_diverse_recommendations(
             ranked_indices=ranked,
             ranked_scores=calibrated,
+            raw_scores=reranked_scores,
             n_recommendations=n_recommendations,
             min_score=min_score,
             excluded_ids=excluded,
@@ -190,6 +239,15 @@ class ExhibitionRecommender:
 
     def _query_vector(self, tokens: list[str]) -> np.ndarray:
         query = " ".join(tokens)
+        if self.embedding_backend == "clip":
+            encoder = self._get_clip_encoder()
+            emb = encoder.encode_texts([query]).astype(np.float32)
+            if emb.size == 0:
+                return np.zeros((self.embeddings.shape[1],), dtype=np.float32)
+            return emb[0]
+
+        if self.text_vectorizer is None:
+            raise RuntimeError("TF-IDF backend requires a loaded text_vectorizer.")
         qvec = self.text_vectorizer.transform([query])
         tfidf_norm = normalize(qvec, norm="l2", axis=1).toarray().astype(np.float32)
         if self.lda_model is not None:
@@ -197,6 +255,19 @@ class ExhibitionRecommender:
             combined = np.hstack([tfidf_norm, topic_vec])
             return normalize(combined, norm="l2", axis=1).ravel()
         return tfidf_norm.ravel()
+
+    def _get_clip_encoder(self) -> CLIPEncoder:
+        if self._clip_encoder is not None:
+            return self._clip_encoder
+        if not self.clip_model_name or not self.clip_pretrained:
+            raise RuntimeError("CLIP backend metadata is incomplete. Rebuild CLIP artifacts.")
+        self._clip_encoder = CLIPEncoder(
+            model_name=self.clip_model_name,
+            pretrained=self.clip_pretrained,
+            device=self.clip_device,
+            batch_size=self.clip_batch_size,
+        )
+        return self._clip_encoder
 
     def _rerank_scores(
         self,
@@ -243,6 +314,7 @@ class ExhibitionRecommender:
         self,
         ranked_indices: np.ndarray,
         ranked_scores: np.ndarray,
+        raw_scores: np.ndarray,
         n_recommendations: int,
         min_score: float,
         excluded_ids: set[int],
@@ -252,6 +324,9 @@ class ExhibitionRecommender:
     ) -> pd.DataFrame:
         score_by_idx = {
             int(idx): float(score) for idx, score in zip(ranked_indices.tolist(), ranked_scores.tolist())
+        }
+        raw_score_by_idx = {
+            int(idx): float(score) for idx, score in zip(ranked_indices.tolist(), raw_scores.tolist())
         }
         candidate_indices = [int(idx) for idx in ranked_indices.tolist()]
         selected: list[int] = []
@@ -302,7 +377,8 @@ class ExhibitionRecommender:
 
             selected.append(best_idx)
             score = score_by_idx.get(best_idx, 0.0)
-            selected_rows.append(self._row(best_idx, score))
+            raw_score = raw_score_by_idx.get(best_idx, score)
+            selected_rows.append(self._row(best_idx, score, raw_score))
 
             chosen = self.metadata.iloc[best_idx]
             chosen_artist = str(chosen.get("artist") or "").strip().lower()
@@ -352,11 +428,12 @@ class ExhibitionRecommender:
                 vector[i] = float(np.mean([rgb[2] for rgb in rgb_hits]))
         return vector
 
-    def _row(self, idx: int, score: float) -> Recommendation:
+    def _row(self, idx: int, score: float, raw_score: float | None = None) -> Recommendation:
         item = self.metadata.iloc[idx]
         return Recommendation(
             object_id=int(item.get("objectID")),
             score=score,
+            raw_score=score if raw_score is None else raw_score,
             title=item.get("title"),
             artist=item.get("artist"),
             department=item.get("department"),

@@ -1,4 +1,4 @@
-.PHONY: setup lint format type test coverage serve build-features train-ranker streamlit
+.PHONY: setup lint format type test coverage serve build-features train-ranker evaluate-backends streamlit streamlit-tfidf streamlit-clip
 
 setup:
 	uv sync --all-extras
@@ -24,8 +24,17 @@ serve:
 streamlit:
 	PYTHONPATH=. uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
 
+streamlit-tfidf:
+	PYTHONPATH=. MET_ARTIFACTS_DIR=artifacts_tfidf MET_AUTO_BUILD_ON_STARTUP=false MET_ENABLE_VISION=false uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+
+streamlit-clip:
+	PYTHONPATH=. MET_ARTIFACTS_DIR=artifacts_clip MET_AUTO_BUILD_ON_STARTUP=false MET_ENABLE_VISION=false uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+
 build-features:
 	uv run python -m scripts.build_features
 
 train-ranker:
 	uv run python -m scripts.train_ranker
+
+evaluate-backends:
+	uv run python -m scripts.evaluate_backends --artifacts artifacts_tfidf artifacts_clip --k 10

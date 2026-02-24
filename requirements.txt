@@ -18,6 +18,8 @@ spacy==3.6.0
 gensim==4.3.1
 transformers==4.31.0
 sentence-transformers==2.2.2
+torch==2.3.1
+open_clip_torch==2.26.1
 
 # Web Framework
 streamlit==1.25.0
