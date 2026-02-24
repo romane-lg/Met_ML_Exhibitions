@@ -58,6 +58,9 @@ class ExhibitionRecommender:
         clip_pretrained: str | None = None,
         clip_device: str = "cpu",
         clip_batch_size: int = 32,
+        clip_similarity_weight: float = 0.8,
+        clip_lexical_weight: float = 0.2,
+        clip_prompt_ensemble: bool = True,
     ) -> None:
         self.embeddings = normalize(np.asarray(embeddings), norm="l2", axis=1)
         self.metadata = metadata.reset_index(drop=True)
@@ -69,6 +72,16 @@ class ExhibitionRecommender:
         self.clip_pretrained = clip_pretrained
         self.clip_device = clip_device
         self.clip_batch_size = clip_batch_size
+        self.clip_similarity_weight = float(max(0.0, clip_similarity_weight))
+        self.clip_lexical_weight = float(max(0.0, clip_lexical_weight))
+        weight_sum = self.clip_similarity_weight + self.clip_lexical_weight
+        if weight_sum > 0:
+            self.clip_similarity_weight /= weight_sum
+            self.clip_lexical_weight /= weight_sum
+        else:
+            self.clip_similarity_weight = 1.0
+            self.clip_lexical_weight = 0.0
+        self.clip_prompt_ensemble = clip_prompt_ensemble
         self._clip_encoder: CLIPEncoder | None = None
         self.numeric_features = (
             np.asarray(numeric_features, dtype=np.float32)
@@ -83,6 +96,9 @@ class ExhibitionRecommender:
             for idx, row in self.metadata.iterrows()
             if pd.notna(row.objectID)
         }
+        self._lexical_docs = self._metadata_docs(self.metadata)
+        self._lexical_vectorizer = TfidfVectorizer(min_df=1, max_features=12000, ngram_range=(1, 2))
+        self._lexical_matrix = self._lexical_vectorizer.fit_transform(self._lexical_docs)
 
     @classmethod
     def from_artifacts(cls, artifacts_dir: str) -> ExhibitionRecommender:
@@ -100,6 +116,9 @@ class ExhibitionRecommender:
         clip_pretrained: str | None = None
         clip_device = "cpu"
         clip_batch_size = 32
+        clip_similarity_weight = 0.8
+        clip_lexical_weight = 0.2
+        clip_prompt_ensemble = True
 
         if backend == "clip":
             clip_meta_path = base / "clip_metadata.joblib"
@@ -109,10 +128,16 @@ class ExhibitionRecommender:
                 clip_pretrained = str(clip_meta.get("pretrained", "laion2b_s34b_b79k"))
                 clip_device = str(clip_meta.get("device", "cpu"))
                 clip_batch_size = int(clip_meta.get("batch_size", 32))
+                clip_similarity_weight = float(clip_meta.get("retrieval_clip_weight", 0.8))
+                clip_lexical_weight = float(clip_meta.get("retrieval_lexical_weight", 0.2))
+                clip_prompt_ensemble = bool(clip_meta.get("prompt_ensemble", True))
             else:
                 clip_model_name = str(backend_payload.get("model_name", "ViT-B-32"))
                 clip_pretrained = str(backend_payload.get("pretrained", "laion2b_s34b_b79k"))
                 clip_device = str(backend_payload.get("device", "cpu"))
+                clip_similarity_weight = float(backend_payload.get("retrieval_clip_weight", 0.8))
+                clip_lexical_weight = float(backend_payload.get("retrieval_lexical_weight", 0.2))
+                clip_prompt_ensemble = bool(backend_payload.get("prompt_ensemble", True))
         else:
             vectorizer_path = base / "text_vectorizer.joblib"
             if vectorizer_path.exists():
@@ -147,6 +172,9 @@ class ExhibitionRecommender:
             clip_pretrained=clip_pretrained,
             clip_device=clip_device,
             clip_batch_size=clip_batch_size,
+            clip_similarity_weight=clip_similarity_weight,
+            clip_lexical_weight=clip_lexical_weight,
+            clip_prompt_ensemble=clip_prompt_ensemble,
         )
 
     def recommend_for_theme(
@@ -235,16 +263,28 @@ class ExhibitionRecommender:
             return np.zeros(len(self.metadata), dtype=float)
         qarr = self._query_vector(tokens)
         query = qarr.reshape(1, -1)
-        return cosine_similarity(self.embeddings, query).ravel()
+        clip_scores = cosine_similarity(self.embeddings, query).ravel()
+        if self.embedding_backend != "clip":
+            return clip_scores
+        lexical_scores = self._lexical_scores(tokens)
+        return (
+            (self.clip_similarity_weight * clip_scores)
+            + (self.clip_lexical_weight * lexical_scores)
+        ).astype(np.float32)
 
     def _query_vector(self, tokens: list[str]) -> np.ndarray:
         query = " ".join(tokens)
         if self.embedding_backend == "clip":
             encoder = self._get_clip_encoder()
-            emb = encoder.encode_texts([query]).astype(np.float32)
+            if self.clip_prompt_ensemble:
+                prompts = self._clip_query_prompts(query)
+            else:
+                prompts = [query]
+            emb = encoder.encode_texts(prompts).astype(np.float32)
             if emb.size == 0:
                 return np.zeros((self.embeddings.shape[1],), dtype=np.float32)
-            return emb[0]
+            combined = emb.mean(axis=0, keepdims=True)
+            return normalize(combined, norm="l2", axis=1).astype(np.float32)[0]
 
         if self.text_vectorizer is None:
             raise RuntimeError("TF-IDF backend requires a loaded text_vectorizer.")
@@ -445,3 +485,42 @@ class ExhibitionRecommender:
     @staticmethod
     def _simple_tokenize(text: str) -> list[str]:
         return tokenize_text(text)
+
+    @staticmethod
+    def _metadata_docs(metadata: pd.DataFrame) -> list[str]:
+        cols = ["title", "artist", "department", "objectDate", "medium"]
+        docs: list[str] = []
+        for row in metadata.to_dict(orient="records"):
+            parts = [str(row.get(col) or "").strip() for col in cols]
+            docs.append(" ".join(p for p in parts if p).lower())
+        return docs
+
+    def _lexical_scores(self, tokens: list[str]) -> np.ndarray:
+        if not tokens:
+            return np.zeros(len(self.metadata), dtype=np.float32)
+        query = " ".join(tokens)
+        qvec = self._lexical_vectorizer.transform([query])
+        return cosine_similarity(self._lexical_matrix, qvec).ravel().astype(np.float32)
+
+    @staticmethod
+    def _clip_query_prompts(query: str) -> list[str]:
+        q = query.strip().lower()
+        expansion_map = {
+            "portrait": ["portrait painting of a person", "self portrait artwork", "painted portrait"],
+            "portraits": ["portrait painting of a person", "self portrait artwork", "painted portrait"],
+            "christian": [
+                "christian religious iconography",
+                "christian devotional artwork",
+                "christian sacred art",
+            ],
+            "egypt": ["ancient egyptian artwork", "egyptian sculpture", "pharaonic art"],
+        }
+        expansions = expansion_map.get(q, [])
+        base = [q] + expansions
+        prompts: list[str] = []
+        for item in base:
+            prompts.append(item)
+            prompts.append(f"a museum artwork depicting {item}")
+            prompts.append(f"a fine art image of {item}")
+        # preserve order and uniqueness
+        return list(dict.fromkeys(prompts))

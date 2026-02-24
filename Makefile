@@ -1,4 +1,4 @@
-.PHONY: setup setup-win lint format type test coverage serve build-features train-ranker evaluate-backends streamlit streamlit-tfidf streamlit-clip
+.PHONY: setup setup-win lint format type test coverage serve build-features train-ranker evaluate-backends evaluate-comprehensive compare-clip streamlit streamlit-tfidf streamlit-clip
 
 setup:
 	mkdir -p .tmp .uv-cache
@@ -42,3 +42,9 @@ train-ranker:
 
 evaluate-backends:
 	uv run python -m scripts.evaluate_backends --artifacts artifacts_tfidf artifacts_clip --k 10
+
+evaluate-comprehensive:
+	uv run python -m scripts.evaluate_model_comprehensive --artifacts $${MET_ARTIFACTS_DIR:-artifacts} --top-k 8 --latency-runs 24 --json-out artifacts/eval_comprehensive.json --csv-out artifacts/eval_comprehensive.csv
+
+compare-clip:
+	uv run python -m scripts.compare_clip_modes --artifacts $${MET_ARTIFACTS_DIR:-artifacts}

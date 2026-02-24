@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from typing import cast
 
 import joblib
 import numpy as np
@@ -8,6 +9,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from src.bootstrap import ensure_artifacts
+from src.config import Settings
 
 
 class StubSettings:
@@ -29,6 +31,9 @@ class StubSettings:
         self.clip_batch_size = 32
         self.clip_text_weight = 0.5
         self.clip_image_weight = 0.5
+        self.clip_retrieval_weight = 0.8
+        self.clip_lexical_weight = 0.2
+        self.clip_prompt_ensemble = True
         self.google_credentials = None
 
 
@@ -46,7 +51,7 @@ def test_bootstrap_inference_only_default_does_not_autobuild(tmp_path, monkeypat
         enable_vision=False,
         embedding_backend="tfidf",
     )
-    status = ensure_artifacts(settings)
+    status = ensure_artifacts(cast(Settings, settings))
     assert status.ready is False
     assert called["value"] is False
     assert status.error is not None
@@ -82,7 +87,7 @@ def test_bootstrap_autobuild_uses_selected_backend(tmp_path, monkeypatch):
         enable_vision=False,
         embedding_backend="clip",
     )
-    status = ensure_artifacts(settings)
+    status = ensure_artifacts(cast(Settings, settings))
     assert status.ready is True
     assert status.built is True
 
@@ -100,5 +105,5 @@ def test_bootstrap_backward_compatible_without_backend_metadata(tmp_path):
         enable_vision=False,
         embedding_backend="tfidf",
     )
-    status = ensure_artifacts(settings)
+    status = ensure_artifacts(cast(Settings, settings))
     assert status.ready is True

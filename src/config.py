@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     clip_batch_size: int = Field(default=32, validation_alias="MET_CLIP_BATCH_SIZE")
     clip_text_weight: float = Field(default=0.5, validation_alias="MET_CLIP_TEXT_WEIGHT")
     clip_image_weight: float = Field(default=0.5, validation_alias="MET_CLIP_IMAGE_WEIGHT")
+    clip_retrieval_weight: float = Field(default=0.8, validation_alias="MET_CLIP_RETRIEVAL_WEIGHT")
+    clip_lexical_weight: float = Field(default=0.2, validation_alias="MET_CLIP_LEXICAL_WEIGHT")
+    clip_prompt_ensemble: bool = Field(default=True, validation_alias="MET_CLIP_PROMPT_ENSEMBLE")
     vision_max_labels: int = 10
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

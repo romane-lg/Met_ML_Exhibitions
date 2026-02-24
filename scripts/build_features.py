@@ -46,6 +46,10 @@ def main() -> None:
     parser.add_argument("--clip-batch-size", type=int, default=32)
     parser.add_argument("--clip-text-weight", type=float, default=0.5)
     parser.add_argument("--clip-image-weight", type=float, default=0.5)
+    parser.add_argument("--clip-retrieval-weight", type=float, default=0.8)
+    parser.add_argument("--clip-lexical-weight", type=float, default=0.2)
+    parser.add_argument("--clip-prompt-ensemble", action="store_true", default=True)
+    parser.add_argument("--no-clip-prompt-ensemble", dest="clip_prompt_ensemble", action="store_false")
     args = parser.parse_args()
     run_build(
         limit=args.limit,
@@ -63,6 +67,9 @@ def main() -> None:
         clip_batch_size=args.clip_batch_size,
         clip_text_weight=args.clip_text_weight,
         clip_image_weight=args.clip_image_weight,
+        clip_retrieval_weight=args.clip_retrieval_weight,
+        clip_lexical_weight=args.clip_lexical_weight,
+        clip_prompt_ensemble=args.clip_prompt_ensemble,
     )
 
 

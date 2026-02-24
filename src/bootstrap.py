@@ -95,6 +95,9 @@ def ensure_artifacts(settings: Settings) -> BootstrapStatus:
                 clip_batch_size=settings.clip_batch_size,
                 clip_text_weight=settings.clip_text_weight,
                 clip_image_weight=settings.clip_image_weight,
+                clip_retrieval_weight=settings.clip_retrieval_weight,
+                clip_lexical_weight=settings.clip_lexical_weight,
+                clip_prompt_ensemble=settings.clip_prompt_ensemble,
             )
             built = True
         except Exception as exc:  # pragma: no cover - surfaced to API/UI state

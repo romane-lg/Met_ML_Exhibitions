@@ -110,7 +110,7 @@ class CLIPEncoder:
         if self._model is not None:
             return
         try:
-            import open_clip  # type: ignore[import-not-found]
+            import open_clip
             import torch
         except Exception as exc:  # pragma: no cover - dependency/runtime specific
             raise RuntimeError(

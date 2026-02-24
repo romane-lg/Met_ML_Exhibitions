@@ -325,6 +325,9 @@ def run_build(  # noqa: PLR0912, PLR0915
     clip_batch_size: int = 32,
     clip_text_weight: float = 0.5,
     clip_image_weight: float = 0.5,
+    clip_retrieval_weight: float = 0.8,
+    clip_lexical_weight: float = 0.2,
+    clip_prompt_ensemble: bool = True,
 ) -> None:
     backend = _validate_embedding_backend(embedding_backend)
     _validate_combined_params(
@@ -338,6 +341,10 @@ def run_build(  # noqa: PLR0912, PLR0915
         raise ValueError("clip_text_weight and clip_image_weight must be >= 0.")
     if backend == "clip" and clip_text_weight == 0.0 and clip_image_weight == 0.0:
         raise ValueError("At least one of clip_text_weight or clip_image_weight must be > 0.")
+    if clip_retrieval_weight < 0.0 or clip_lexical_weight < 0.0:
+        raise ValueError("clip_retrieval_weight and clip_lexical_weight must be >= 0.")
+    if backend == "clip" and clip_retrieval_weight == 0.0 and clip_lexical_weight == 0.0:
+        raise ValueError("At least one of clip_retrieval_weight or clip_lexical_weight must be > 0.")
     settings = get_settings()
     data_csv = Path(settings.data_csv)
     artifacts = Path(settings.artifacts_dir)
@@ -558,6 +565,9 @@ def run_build(  # noqa: PLR0912, PLR0915
             "batch_size": int(clip_batch_size),
             "text_weight": float(clip_text_weight),
             "image_weight": float(clip_image_weight),
+            "retrieval_clip_weight": float(clip_retrieval_weight),
+            "retrieval_lexical_weight": float(clip_lexical_weight),
+            "prompt_ensemble": bool(clip_prompt_ensemble),
             "embedding_dimension": int(emb.shape[1]) if emb.ndim == 2 else 0,
             "timestamp_utc": datetime.now(UTC).isoformat(),
         }
@@ -599,6 +609,9 @@ def run_build(  # noqa: PLR0912, PLR0915
                 "model_name": clip_metadata["model_name"],
                 "pretrained": clip_metadata["pretrained"],
                 "device": clip_metadata["device"],
+                "retrieval_clip_weight": clip_metadata["retrieval_clip_weight"],
+                "retrieval_lexical_weight": clip_metadata["retrieval_lexical_weight"],
+                "prompt_ensemble": clip_metadata["prompt_ensemble"],
             }
         )
     backend_path.write_text(json.dumps(backend_payload, ensure_ascii=True, indent=2), encoding="utf-8")
