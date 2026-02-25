@@ -47,10 +47,14 @@ Automated recommendation system for themed MET exhibitions using combined image 
 - `artifacts/lightgbm_ranker.joblib` (optional)
 
 ## Setup
+> **Git LFS required** — images are stored in Git LFS. Install it from https://git-lfs.com before cloning, or run `git lfs pull` after cloning to download real image files instead of pointer text.
+
 1. Install dependencies:
 ```bash
 python -m pip install uv
 uv sync --all-extras
+git lfs install
+git lfs pull
 ```
 2. Create local env file:
 ```bash

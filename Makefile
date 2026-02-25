@@ -1,11 +1,22 @@
-.PHONY: setup setup-win lint format type test coverage serve build-features train-ranker evaluate-backends evaluate-comprehensive compare-clip streamlit streamlit-tfidf streamlit-clip
+.PHONY: setup setup-win setup-lfs lfs-pull lint format type test coverage serve build-features train-ranker evaluate-backends evaluate-comprehensive compare-clip streamlit streamlit-tfidf streamlit-clip
 
 setup:
 	mkdir -p .tmp .uv-cache
 	TMP=.tmp TEMP=.tmp UV_CACHE_DIR=.uv-cache uv sync --all-extras
+	git lfs install
+	git lfs pull
 
 setup-win:
 	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_env.ps1
+	git lfs install
+	git lfs pull
+
+setup-lfs:
+	git lfs install
+	git lfs pull
+
+lfs-pull:
+	git lfs pull
 
 lint:
 	uv run ruff check .
