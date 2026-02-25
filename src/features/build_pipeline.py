@@ -23,7 +23,6 @@ from src.features.image_features import (
     extract_numeric_features,
     vision_tokens_from_features,
 )
-from src.loaders import VisionAPILoader
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +49,14 @@ def resolve_image_path(raw_image_path: str, images_dir: str) -> Path:
         return path
 
     images_base = Path(images_dir)
-    if path.parts and path.parts[0].lower() == "images":
+    first = path.parts[0].lower() if path.parts else ""
+    if first == "images":
+        # e.g. "images/398746.jpg" → <images_dir>/398746.jpg
         return images_base.parent / path
+    if len(path.parts) > 1:
+        # e.g. "data/raw/images/398746.jpg" stored in CSV — resolve from project root
+        return Path.cwd() / path
+    # bare filename — append to images_dir
     return images_base / path
 
 
@@ -318,7 +323,7 @@ def run_build(  # noqa: PLR0912, PLR0915
     text_weight: float = 1.0,
     vision_weight: float = 1.0,
     numeric_weight: float = 1.0,
-    embedding_backend: str = "tfidf",
+    embedding_backend: str = "clip",
     clip_model_name: str = "ViT-B-32",
     clip_pretrained: str = "laion2b_s34b_b79k",
     clip_device: str = "cpu",
@@ -384,21 +389,7 @@ def run_build(  # noqa: PLR0912, PLR0915
         offline,
     )
 
-    use_vision = not offline and settings.enable_vision
-    if use_vision:
-        creds_path = settings.google_credentials
-        if not creds_path:
-            raise RuntimeError(
-                "Vision output is missing and credentials are not set. "
-                "Add your key at config/service_account.json and set "
-                "GOOGLE_APPLICATION_CREDENTIALS=config/service_account.json in .env."
-            )
-        if not Path(creds_path).exists():
-            raise RuntimeError(
-                "Vision output is missing and credentials file was not found: "
-                f"{creds_path}. Add your key at config/service_account.json."
-            )
-    loader = VisionAPILoader(credentials_path=settings.google_credentials) if use_vision else None
+    loader = None  # Google Vision API has been removed; image tokens are always empty
     cache: dict[str, dict[str, list[str]]] = {}
     if tok_path.exists() and not force:
         cache = json.loads(tok_path.read_text(encoding="utf-8"))
