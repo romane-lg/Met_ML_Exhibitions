@@ -114,11 +114,16 @@ def score_with_filters(
 def image_path(raw: str | None) -> str | None:
     if not raw:
         return None
-    candidate = Path(raw)
+    # Normalize separators so Windows-style paths work on Mac/Linux too
+    candidate = Path(raw.replace("\\", "/"))
     if not candidate.is_absolute():
         images_base = Path(SETTINGS.images_dir)
-        if candidate.parts and candidate.parts[0].lower() == "images":
+        first = candidate.parts[0].lower() if candidate.parts else ""
+        if first == "images":
             candidate = images_base.parent / candidate
+        elif len(candidate.parts) > 1:
+            # project-root-relative path, e.g. "data/raw/images/398746.jpg"
+            candidate = Path.cwd() / candidate
         else:
             candidate = images_base / candidate
     return str(candidate) if candidate.exists() else None
