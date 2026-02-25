@@ -32,9 +32,9 @@ objectID,title,artist,department,objectDate,medium,image_path
 544453,Head from a Statue of King Amenhotep I,,Egyptian Art,ca. 1525–1504 B.C.,"Sandstone, paint",data\raw\images\544453.jpg
 436492,Saint Christopher and the Infant Christ,Domenico Ghirlandaio (Domenico Bigordi),European Paintings,,Fresco,data\raw\images\436492.jpg
 590874,Tomb Chapel of Raemkai,,Egyptian Art,ca. 2446–2389 B.C.,"Limestone, paint",data\raw\images\590874.jpg
-544043,Cosmetic Vessel in the Shape of a Dwarf,,Egyptian Art,ca. 1353–1323 B.C.,Travertine (Egyptian alabaster) (?),data\raw\images\544043.jpg
 437382,Vase of Flowers (Pink Background),Odilon Redon,European Paintings,ca. 1906,Oil on canvas,data\raw\images\437382.jpg
 466085,"Capital with Angels Holding the Veil of Saint Veronica, with a Column",,Medieval Art,ca. 1325–75,Limestone with traces of polychromy,data\raw\images\466085.jpg
+544043,Cosmetic Vessel in the Shape of a Dwarf,,Egyptian Art,ca. 1353–1323 B.C.,Travertine (Egyptian alabaster) (?),data\raw\images\544043.jpg
 545439,Model boat,,Egyptian Art,ca. 1981–1802 B.C.,"Wood, paint",data\raw\images\545439.jpg
 729644,"In proof of true love, a watercarrier skeleton arguing with a woman (Posada); two skeleton angels in upper corners (Manilla)",José Guadalupe Posada,Drawings and Prints,ca. 1890–96,Type-metal engraving and letterpress,data\raw\images\729644.jpg
 470307,Plaque with the Pentecost,,The Cloisters,ca. 1150–75,Champlevé and translucent enamel on copper gilt,data\raw\images\470307.jpg
@@ -54,7 +54,7 @@ objectID,title,artist,department,objectDate,medium,image_path
 255407,Bronze statuette of a youth dancing,,Greek and Roman Art,late 4th century BCE,Bronze,data\raw\images\255407.jpg
 24320,Saber,,Arms and Armor,1522–66,"Steel, gold, fish skin, wood",data\raw\images\24320.jpg
 267019,"American Barque ""Jane Tudor,"" Conway Bay",David Johnson,Photographs,ca. 1855,Salted paper print from glass negative,data\raw\images\267019.jpg
-849501,"Jagadhatri, a benign form of Durga-Kali",,Asian Art,1878–83,Lithograph with watercolor on paper,data\raw\images\849501.jpg
+548614,Kohl Tube in the Shape of a Papyrus Column,,Egyptian Art,ca. 1390–1352 B.C.,Glass,data\raw\images\548614.jpg
 557053,Fragment of a Scarab of a Lady,,Egyptian Art,ca. 1850–1640 B.C.,Light green faience,data\raw\images\557053.jpg
 248466,Bronze statuette of a philosopher on a lamp stand,,Greek and Roman Art,late 1st century BCE,Bronze,data\raw\images\248466.jpg
 544766,"Stela of the royal scribe Amunnakht praising the divine barque of Amun-Re, Lord of the Thrones of the Two Lands",,Egyptian Art,ca. 1184–1070 BCE,"Limestone, pigment",data\raw\images\544766.jpg
@@ -423,6 +423,11 @@ objectID,title,artist,department,objectDate,medium,image_path
 208898,Two wall sconces (Bras de cheminée),Jean-Claude Duplessis,European Sculpture and Decorative Arts,ca. 1761,"Soft-paste porcelain decorated in polychrome enamel, gold, gilt bronze",data\raw\images\208898.jpg
 438688,Saint Francis,Federico Barocci,European Paintings,ca. 1600–1604,Oil on canvas,data\raw\images\438688.jpg
 459027,"Portrait of a Woman, Possibly a Nun of San Secondo; (verso) Scene in Grisaille",Jacometto (Jacometto Veneziano),Robert Lehman Collection,ca. 1485–95,Oil on wood; (verso: oil and gold on wood),data\raw\images\459027.jpg
+548676,Door Jamb of Rau,,Egyptian Art,ca. 1479–1425 B.C.,Limestone,data\raw\images\548676.jpg
+550791,Painted wooden panel of Tabakenkhonsu,,Egyptian Art,ca. 680–670 B.C.,"Wood, gesso, paint",data\raw\images\550791.jpg
+437021,Head of Christ,Master of the Orcagnesque Misericordia,European Paintings,,"Tempera on wood, gold ground",data\raw\images\437021.jpg
+383883,Tobias and the Angel (small plate),Hendrick Goudt,Drawings and Prints,1608,Engraving; Holl.'s second state of three,data\raw\images\383883.jpg
+811226,Hearts for the Year 1800,Thomas Rowlandson,Drawings and Prints,"April 20, 1800",Hand-colored etching,data\raw\images\811226.jpg
 338711,The Peasant Wedding Dance,Pieter van der Heyden,Drawings and Prints,after 1570,Engraving; first state of three,data\raw\images\338711.jpg
 35992,Setting Sun on the Autumn River,Pan Yunyu,Asian Art,1604 or 1664,Folding fan mounted as an album leaf; ink and color on gold paper,data\raw\images\35992.jpg
 309411,Headdress ornament,Calima (Yotoco) artist,The Michael C. Rockefeller Wing,100 BCE–700 CE,Gold,data\raw\images\309411.jpg
@@ -472,23 +477,27 @@ objectID,title,artist,department,objectDate,medium,image_path
 471560,Relief of Saint Lawrence Presenting the Poor,Master of the Sonnenberg-Künigl Altar,The Cloisters,ca. 1490,"White or stone pine, paint, gilt",data\raw\images\471560.jpg
 451406,Portrait of a Dervish,,Islamic Art,16th century,"Main support: ink, opaque watercolor, and gold on paper
 Margins: gold on dyed paper",data\raw\images\451406.jpg
-757959,"Plate 44: Robert Macaire, Barrister, from 'Caricaturana,' published in Les Robert Macaires",Honoré Daumier,Drawings and Prints,1838,Lithograph on wove paper,data\raw\images\757959.jpg
-822725,Cartel barometer (one of a pair),André Charles Boulle,European Sculpture and Decorative Arts,ca. 1710,"Gilded bronze, inlaid with steel and blue horn",data\raw\images\822725.jpg
-334030,"A radiant female figure beset by dark spirits; page 45 from the ""Images of Spain"" Album (F)",Goya (Francisco de Goya y Lucientes),Drawings and Prints,ca. 1812–20,"Brush and point of brush, brown and gray washes, over touches or chalk",data\raw\images\334030.jpg
-823927,"Horse Accomplishments, Sketch 6: A Time Keeper !!",Thomas Rowlandson,Drawings and Prints,"August 1, 1799",Etching and aquatint,data\raw\images\823927.jpg
 40706,One of a Pair of Vases with Dragon Handles,,Asian Art,19th century,Cloisonné enamel with gilt bronze and champlevé,data\raw\images\40706.jpg
 757756,"Plate 13: Robert Macaire, business agent, from 'Caricaturana,' published in Les Robert Macaires",Honoré Daumier,Drawings and Prints,1838,Color lithograph on wove paper; third state of four (Delteil),data\raw\images\757756.jpg
+757959,"Plate 44: Robert Macaire, Barrister, from 'Caricaturana,' published in Les Robert Macaires",Honoré Daumier,Drawings and Prints,1838,Lithograph on wove paper,data\raw\images\757959.jpg
 822724,Cartel clock (one of a pair),André Charles Boulle,European Sculpture and Decorative Arts,"ca. 1710, with later movement","Gilt bronze, horn, oak; enamel, brass, glass",data\raw\images\822724.jpg
+822725,Cartel barometer (one of a pair),André Charles Boulle,European Sculpture and Decorative Arts,ca. 1710,"Gilded bronze, inlaid with steel and blue horn",data\raw\images\822725.jpg
 910942,Ego Mater pulchrae dilectionis Eccl. 24.,Claudine Bouzonnet Stella,Drawings and Prints,1668,Etching and engraving,data\raw\images\910942.jpg
 360413,"Plate 7 from ""Los Caprichos"": Even thus he cannot make her out (Ni asi la distingue)",Goya (Francisco de Goya y Lucientes),Drawings and Prints,1799,"Etching, aquatint, drypoint",data\raw\images\360413.jpg
 459231,Saint John the Evangelist,Upper Rhine (Switzerland),Robert Lehman Collection,ca. 1480,"Pen and blackish brown ink and gray wash over a black chalk underdrawing (still partially visible in the foliate forms of the throne at the upper right), the thin, pale lines of the preliminary ink drawing clearly distinguishable from the thicker, darker ones on top of them, which have dense, felt-like accumulations of tiny strokes in some of the shadows, but are by the same hand; traces of a curved line in black chalk and partly in brush and gray ink in the lower corners and at the upper right.",data\raw\images\459231.jpg
 343315,Perspectival Cross-Section of a Venetian Palace,Eugène-Emmanuel Viollet-le-Duc,Drawings and Prints,1830–79,"Pen and gray ink, brush and light wash, metal point framing lines, with small spatters of brown wash",data\raw\images\343315.jpg
+334030,"A radiant female figure beset by dark spirits; page 45 from the ""Images of Spain"" Album (F)",Goya (Francisco de Goya y Lucientes),Drawings and Prints,ca. 1812–20,"Brush and point of brush, brown and gray washes, over touches or chalk",data\raw\images\334030.jpg
 194096,Watch,David Lestourgeon,European Sculpture and Decorative Arts,ca. 1702,Outer and inner cases: silver; Dial: champlevé silver,data\raw\images\194096.jpg
 42260,"Recluse Fisherman, Autumn Trees",Sheng Mao,Asian Art,dated 1349,Fan mounted as an album leaf; ink and color on silk,data\raw\images\42260.jpg
+823927,"Horse Accomplishments, Sketch 6: A Time Keeper !!",Thomas Rowlandson,Drawings and Prints,"August 1, 1799",Etching and aquatint,data\raw\images\823927.jpg
 727418,Valentine,Anonymous,Drawings and Prints,1859–69,"Cameo-embossed, open-work lace paper, chromolithography, colored paper.",data\raw\images\727418.jpg
 734364,Valentine,Anonymous,Drawings and Prints,ca. 1880,"Cameo-embossed open-work lace paper, chromolithography, die-cut scrap",data\raw\images\734364.jpg
 727408,Valentine,Anonymous,Drawings and Prints,1859–69,"Cameo-embossed, open-work lace paper, lithography, watercolor",data\raw\images\727408.jpg
 209104,Settee (one of a pair) (part of a set),Johann Michael Bauer,European Sculpture and Decorative Arts,ca. 1763–64,"Carved, painted and gilded linden wood; squab pillow in silk velvet (not original)",data\raw\images\209104.jpg
+785041,Valentine - Mechanical - Round Birthday bouquet,"Anonymous, British or American, 19th century",Drawings and Prints,ca. 1875,"Heavy die-cut card stock, chromolithography, celluloid grommet",data\raw\images\785041.jpg
+435722,Portrait of a Man in Armor with Two Pages,Paris Bordon,European Paintings,,Oil on canvas,data\raw\images\435722.jpg
+449848,Seal with Hebrew Inscription,,Islamic Art,10th–11th century,Carnelian; incised,data\raw\images\449848.jpg
+450605,The Prince and the Petitioner,Vali Jan,Islamic Art,late 16th century,Ink and gold on paper,data\raw\images\450605.jpg
 549236,Stela of Ptahmose,,Egyptian Art,ca. 1320–1290 B.C.,Limestone,data\raw\images\549236.jpg
 757960,"Plate 43: A man of sensitivity at the right price, from 'Caricaturana,' published in Les Robert Macaires",Honoré Daumier,Drawings and Prints,1838,Lithograph on wove paper; first state of two (Delteil),data\raw\images\757960.jpg
 759529,"Plate 30: Robert Macaire before his judges, from 'Caricaturana,' published in Les Robert Macaires",Honoré Daumier,Drawings and Prints,1838,Lithograph on wove paper; second state of two (Delteil),data\raw\images\759529.jpg
@@ -550,6 +559,16 @@ Margins: gold on dyed paper",data\raw\images\451406.jpg
 200827,Jar,Chantilly,European Sculpture and Decorative Arts,ca. 1735–40,Tin-glazed soft-paste porcelain decorated in polychrome enamels,data\raw\images\200827.jpg
 61652,Plaque with Buddhist Triad,,Asian Art,7th century,Earthenware with traces of pigment and gilding,data\raw\images\61652.jpg
 816189,"”Abiding nowhere, the awakened mind arises”",Musō Soseki,Asian Art,early to mid-14th century,Hanging scroll; ink on paper,data\raw\images\816189.jpg
+839041,Study of Water and Plants,Thomas Fearnley,European Paintings,1837,"Oil on paper, laid down on wood",data\raw\images\839041.jpg
+435864,A Woman with a Dog,Giacomo Ceruti,European Paintings,1740s,Oil on canvas,data\raw\images\435864.jpg
+203202,Food warmer with insert,Vienna,European Sculpture and Decorative Arts,ca. 1730–35,"Hard-paste porcelain decoated in polychrome enamels, gold",data\raw\images\203202.jpg
+448240,Engraved Lamp Stand with Chevron Pattern,,Islamic Art,dated 986 AH/1578–79 CE,"Brass; cast, engraved, and inlaid with black and red pigment",data\raw\images\448240.jpg
+435848,The Birth of the Virgin,Fra Carnevale (Bartolomeo di Giovanni Corradini),European Paintings,1467,Tempera and oil on wood,data\raw\images\435848.jpg
+203842,Standing shelf (one of a pair),William Linnell,European Sculpture and Decorative Arts,ca. 1753–54,"Lacquered and painted pine, mahogany and British walnut",data\raw\images\203842.jpg
+435997,The Storm,Pierre-Auguste Cot,European Paintings,1880,Oil on canvas,data\raw\images\435997.jpg
+38452,The Death of the Buddha (Parinirvana),,Asian Art,ca. 3rd century,Schist,data\raw\images\38452.jpg
+749361,Tableau of the Principal Peoples of America (Tableau des principaux peuples de l'Amérique),Jacques Grasset de Saint-Sauveur,The American Wing,1798,Etching and aquatint with hand coloring,data\raw\images\749361.jpg
+629067,"Cornelia, Mother of the Gracchi, Pointing to her Children as her Most Precious Ornaments",Gillis Mostaert the Elder,Drawings and Prints,mid-16th–late 16th century,"Pen and brown ink, brush and blue wash",data\raw\images\629067.jpg
 68310,Seven-Panel Buddhist Monk’s Vestment (Shichijō kesa) with Peony Patterns in Undulating Columns,,Asian Art,ca. early 18th century,Twill-weave silk with supplementary weft patterning,data\raw\images\68310.jpg
 68308,Seven-Panel Buddhist Monk’s Vestment (Shichijō kesa) with Crane Patterns on Hexagonal Diaper Pattern (Mokkō) Background,,Asian Art,early 17th century,Twill-weave silk with supplementary weft patterning (karaori),data\raw\images\68308.jpg
 789235,"R.A.'s of Genius Reflecting on the True Line of Beauty, at the Life Academy Somerset House",Thomas Rowlandson,Drawings and Prints,"June 1, 1824",Hand-colored etching and aquatint,data\raw\images\789235.jpg
@@ -585,64 +604,94 @@ Margins: gold on dyed paper",data\raw\images\451406.jpg
 705236,Jean Auguste Dominique Ingres (1780–1867),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1826,Bronze,data\raw\images\705236.jpg
 209366,Horace Vernet (1789–1863),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,Bronze,data\raw\images\209366.jpg
 210059,Jean-Baptiste Isabey,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,"signed and dated 1845, cast between 1845 and 1857",Bronze,data\raw\images\210059.jpg
+211351,Antoine-Jean Gros,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832,Bronze,data\raw\images\211351.jpg
 211350,Lazare Carnot,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,Bronze,data\raw\images\211350.jpg
 230975,"Marie-Jean-Antoine-Nicolas de Caritat, marquis de Condorcet",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1831,Bronze,data\raw\images\230975.jpg
+230978,Delphine Gay,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,Bronze,data\raw\images\230978.jpg
 231229,"André Chénier, Poet (1762–1794)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,cast between 1844 and 1856,Bronze,data\raw\images\231229.jpg
 210286,"Dominique Dufour, Baron de Pradt (1759–1837), French ecclesiastic and politician, commonly known as the ""Abbé de Pradt,"" though at one time nominated by Bonaparte, for political services, Archbishop of Malines",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, cast",data\raw\images\210286.jpg
+210290,"Prosper Merimée (1803–1870), French man-of-letters, historian and novelist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, brown patina, hollow cast",data\raw\images\210290.jpg
 210598,Jeremy Bentham,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,"modeled ca. 1830, cast before 1844",Bronze,data\raw\images\210598.jpg
 210293,"Céleste Motte (afterwards wife if the designer and painter, Achille Devéria)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\210293.jpg
+210292,"Jean-Baptiste Jourdan  (1762–1833), Marshal of France",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\210292.jpg
 210291,"Youthful portrait of Victor Hugo (1802–1885), French poet and novelist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, brown patina, hollow cast",data\raw\images\210291.jpg
 208065,Portrait of Pierre Cartellier (1757–1831),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,mid-19th century,Bronze,data\raw\images\208065.jpg
+208063,Charles-Antoine Callamard (1769–1821),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,mid-19th century,Bronze,data\raw\images\208063.jpg
 208064,Portrait of Claude Dejoux (1732–1816),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,mid-19th century,Bronze,data\raw\images\208064.jpg
 231230,"Baptiste-Henri Grégoire, called L'Abbé Grégoire (1750–1831)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,cast between 1844 and 1856,Bronze,data\raw\images\231230.jpg
+194627,"Claude-Joseph Ferry (1756–1845), French savant and statesman",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1839,Proof in bronze - single,data\raw\images\194627.jpg
 188417,"Dame Louise Swanton-Belloc (1796–1881), French littératrice (translated Lord Byron into French)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, cast",data\raw\images\188417.jpg
 188418,"Georges Couthon (1756–1794), Member of the Revolutionary Convention of 1792; one of the Triumvirate with Robespierre and Saint-Just, with whom he was guillotined",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, cast - single",data\raw\images\188418.jpg
+188431,"Carl Gustave Carus (1789–1869), Saxon physician, man-of-letters, and painter",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1834,"Bronze, cast - single",data\raw\images\188431.jpg
 188419,"Mary Somerville (née Fairfax), Scottish mathematician and astronomer (1780–1872)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, brown patina",data\raw\images\188419.jpg
 188408,"Henri Auguste Barbier (1805–1882), French poet, Member of the Academy",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1833,"Bronze, cast - single",data\raw\images\188408.jpg
+188420,"Maurice Etienne Comte de Gerard, (1773–1852), Marshal of France",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, cast - single",data\raw\images\188420.jpg
 188411,"Mme. Roland (Manon Jeanne Philipon) (1754–1793), French literary woman and politician",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, galvano - single",data\raw\images\188411.jpg
 188409,"John Frederick Blumenbach (1752–1841), German physician and physiologist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1834,"Bronze, cast - single",data\raw\images\188409.jpg
+188429,"Joseph Louis Gay-Lussac, French physician and scientist (1778–1850)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830s,"Bronze, cast - single",data\raw\images\188429.jpg
 188430,"Edgar Quinet (1803–1875), French poet and political writer",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1838,"Bronze, cast - single",data\raw\images\188430.jpg
 188423,"Antoine Louis Claude Destutt de Tracy (1754–1836), French philosopher, Member of the Institute",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, cast - single",data\raw\images\188423.jpg
+188424,"Alphonse Milbert, Advocate",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1838 (?),"Bronze, cast - single",data\raw\images\188424.jpg
 188413,"Henri Benjamin Constant de Rebecque (1767–1830), Swiss-French political writer and politician",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, cast - single",data\raw\images\188413.jpg
 188426,"Etienne Jean Panis, (1757–1832) French politician, member of the Convention",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, cast - single",data\raw\images\188426.jpg
+188421,"Pierre Paul Royer-Collard (1763–1845), French editor, philosopher, statesman, and Member of the Academy",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, cast - single",data\raw\images\188421.jpg
 188427,François Marie Granet (1777–1849),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1827,"Bronze, cast - single",data\raw\images\188427.jpg
 188416,"Claude Antoine Gabriel de Choiseul, duc et Pair de France (1760–1838)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188416.jpg
+188412,"Louis Boulanger (1806–1867), French historical painter",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188412.jpg
 188422,"Antoinette Cécile Hortense Lescot, Mme. Haudebourt-Lescot, painter",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1829,"Bronze, cast",data\raw\images\188422.jpg
 188425,"Dominique Francois Arago (1789–1856), French scientist and astronomer",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832,"Bronze, cast - single",data\raw\images\188425.jpg
+188414,"Etienne Denis Duc de Pasquier (1767–1862), French statesman and President of the House of Peers, 1844",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832,"Bronze, cast - single",data\raw\images\188414.jpg
 188410,"Theodore Le Breton (1803–1883), French workman-poet",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1836,"Bronze, cast - single",data\raw\images\188410.jpg
 188415,"Charles Nicolas Baron Fabvier (1783–1855), French soldier and volunteer in War of Greek Independence",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188415.jpg
+188450,"Andrée Marie Constant Dumeril (1774–1860), French physician and zoologist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188450.jpg
 188444,"George Canning (1770–1827), British conservative statesman",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1827,"Bronze, cast - single",data\raw\images\188444.jpg
 188465,"L'Abbé (Felicité Robert) de Lamennais (1782–1854), French ecclesiastic and theorist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1831,"Bronze, cast - single",data\raw\images\188465.jpg
+188456,"Guillaume Xavier Labbey de Pompiéres (1751–1831), French orator and polititian",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1829,"Bronze, cast - single",data\raw\images\188456.jpg
+188438,"Hippolyte Fortoul (1811–1856), French man-of-letters and politician",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1839,"Bronze, cast - single",data\raw\images\188438.jpg
+188432,"Xavier Marmier (1809–1892), French soldier, traveler, Member of the Academy",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1835,"Bronze, cast - single",data\raw\images\188432.jpg
+188462,"Théodore Pavie (1811–1896), Orientalist, friend of the artist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832,"Bronze, cast - single",data\raw\images\188462.jpg
+188446,"Marc Isambart Brunel (1769–1849), engineer, builder of the Thames Tunnel",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188446.jpg
+188463,"Johann Jacob Berzélius (1779–1848), Swedish scientific chemist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1833,"Bronze, cast - single",data\raw\images\188463.jpg
+188440,"Sydney Lady Morgan (née Owenson), Irish novelist (1777–1859)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1829,"Bronze, cast - single",data\raw\images\188440.jpg
+188469,"Evariste Boulay-Paty (1804–1864), French poet",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1847,"Bronze, cast - single",data\raw\images\188469.jpg
+188445,"Laurent Gouvion Saint-Cyr (1764–1830), Marshal of France, Minister of War 1815–1821",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832 (?),"Bronze, cast - single",data\raw\images\188445.jpg
+188464,"Auguste Simon Louis Berard (1783–1859), French politician, who drew up the ""charter"" of 1830",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1834,"Bronze, cast - single",data\raw\images\188464.jpg
+188437,"Charles, Baron de Meneval (1778–1856), Secretary and librarian to Napoleon I",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1840,"Bronze, cast - single",data\raw\images\188437.jpg
+188447,"Achille Devéria (1800–1857), French painter and designer, first to apply color to lithography",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, brown patina, hollow cast",data\raw\images\188447.jpg
+188472,"Maximilien Marie Isidore Robespierre (1758–1794), French revolutionary and investigator of ""the Terror""",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, brown patina, hollow cast; black molded wood frame",data\raw\images\188472.jpg
+188457,"François René Auguste Vicomte de Chateaubriand (1768–1848), French statesman and man-of-letters",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, greenish-brown patina, hollow cast",data\raw\images\188457.jpg
 188470,"François Charles Hugues Laurent Pouqueville (1770–1838), French traveler in the Orient and man-of-letters",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1827,"Bronze, cast - single",data\raw\images\188470.jpg
 188441,"John Colettis (Kolettis), one of the ""Liberators"" of Greece, and under King Otho, Greek Ambassador in Paris (1784–1846)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1836,"Bronze, cast - single",data\raw\images\188441.jpg
+188439,"Thaddeus Kosciuszko, Polish patriot (1746–1817)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, cast - single",data\raw\images\188439.jpg
 188454,"George Sand (Armandine Lucile Aurore Dupin, Baroness Dudevant), French novelist (1804–1876)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, yellow-brown patina, hollow cast",data\raw\images\188454.jpg
 188460,"Amelia Opie (née Alderson), English novelist and moral writer (1769–1853)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, cast - single",data\raw\images\188460.jpg
+188461,"Nicolas Toussaint Charlet (1792–1845), French painter of battle-pieces",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188461.jpg
 188434,"Antoine Etienne Renaud Augustin Serres (1786–1866), French physician and anthropologist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1838,"Bronze, cast",data\raw\images\188434.jpg
 188471,"Armand Carrel (1800–1836), French publicist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832,"Bronze, cast - single",data\raw\images\188471.jpg
+188443,"Louis Prudhomme (1752–1830), French journalist and pamphleteer",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188443.jpg
 188435,"James Fenimore Cooper (1789–1851), American novelist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, brown patina, hollow cast",data\raw\images\188435.jpg
-188458,"Gioachino Rossini (1792–1868), Italian composer",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1829,"Bronze, cast - single",data\raw\images\188458.jpg
-188436,"Godefroid Cavaignac (1798–1845), French republican editor and politician",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1834,"Bronze, cast - single",data\raw\images\188436.jpg
-188433,"Hughes Bernard Maret, Duc de Bassano (1763–1839)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1835,"Bronze, cast - single",data\raw\images\188433.jpg
-188449,"Alfred Comte de Vigny (1797–1863), French poet and Member of the Academy",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, brown patina, hollow cast",data\raw\images\188449.jpg
-188473,"Êtienne Denis, Duc de Pasquier (1767–1862), French statesman",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832,"Bronze, cast - single",data\raw\images\188473.jpg
-236751,Augustin Thierry,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,"1828, cast before 1844",Bronze,data\raw\images\236751.jpg
 232192,Charles Philipon,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1834,Bronze,data\raw\images\232192.jpg
 232193,Claude-Joseph Rouget de Lisle,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1833,Bronze,data\raw\images\232193.jpg
+231795,"Henri Bernardin de Saint-Pierre (1737–1814), writer",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1844–56,Bronze,data\raw\images\231795.jpg
 231796,"Eugène F.-M.-J. Devéria (1805–1865), painter",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828–38,Bronze,data\raw\images\231796.jpg
 236330,"Emmanuel-Augustin-Dieudonné-Marin-Joseph, comte de Las Cases",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,Bronze,data\raw\images\236330.jpg
+236329,François-Noël Babeuf,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1844–56,Bronze,data\raw\images\236329.jpg
 666197,Friedrich Ludwig Zacharias Werner (1768–1823),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,Bronze,data\raw\images\666197.jpg
 210294,"Georges Louis DuVernoy (1777–1855), French naturalist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1835,"Bronze, cast - single",data\raw\images\210294.jpg
 188453,"Victor Cousin (1792–1867), French philosopher",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1829,"Bronze, cast - single",data\raw\images\188453.jpg
 188452,"Count (Antoine Jacques Claude Joseph) Boulay de la Meurthe , Polititian, Minister of State",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832,"Bronze, cast - single",data\raw\images\188452.jpg
 190661,"Josephine Bonaparte (née Tascher de la Pagerie), first wife of Napoleon I",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, cast",data\raw\images\190661.jpg
+188448,"Adèle Hugo (née Foucher, wife of Victor Hugo) (d. 1868)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, brown patina, hollow cast",data\raw\images\188448.jpg
 238869,Marat,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,mid-19th century after a model of 1830,Bronze,data\raw\images\238869.jpg
 188451,"Jean Auguste Dominique Ingres (1780–1867), French painter",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,19th century,"Bronze, brown patina, hollow cast",data\raw\images\188451.jpg
+190660,"Napoleon Bonaparte, depicted about the time of his first campaign (1796)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,after model 1838,"Bronze, cast",data\raw\images\190660.jpg
 705237,Ferdinand Victor Eugène Delacroix (1798–1863),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,Bronze,data\raw\images\705237.jpg
 705233,Dominique François Arago (1786–1856),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832,Bronze,data\raw\images\705233.jpg
 156463,Doll,,Costume Institute,late 18th century,"silk, linen, metal, pearls, cotton, wood",data\raw\images\156463.jpg
 360248,The Battle of the Sea Gods (left portion of  frieze),Andrea Mantegna,Drawings and Prints,before 1481,Engraving,data\raw\images\360248.jpg
 208084,Dish,Joseph-Théodore Deck,European Sculpture and Decorative Arts,1866,Earthenware,data\raw\images\208084.jpg
 363041,"Design for a Crucifix with the Virgin Mary, Saint Mary Magdalen, and Saint John",Polidoro da Caravaggio,Drawings and Prints,n.d.,"Pen and brown ink, brush and brown wash, over traces of black chalk",data\raw\images\363041.jpg
+239522,Mélanie Waldor (1796–1871),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1835,Cast bronze with golden brown patina,data\raw\images\239522.jpg
 660851,Pierre-Jean de Béranger (1780–1857),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,"modeled 1830, cast ca. 1830–56",Bronze,data\raw\images\660851.jpg
 629657,Robespierre (1758–1794),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1835,Bronze,data\raw\images\629657.jpg
 711327,Design for a Valance with a Grotesque Motif and Thin Garlands of Flowers and Leaves with a Scrolling Frame,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711327.jpg
@@ -650,62 +699,40 @@ Margins: gold on dyed paper",data\raw\images\451406.jpg
 355377,Storia di due amanti (Tale of Two Lovers),Enea Silvio Piccolomini,Drawings and Prints,ca. 1495–1500,Printed book with woodcut illustrations,data\raw\images\355377.jpg
 720984,Model for a medal of Francesco Redi; a Ship at Sea,Massimiliano Soldani,Robert Lehman Collection,1677,Wax on slate.,data\raw\images\720984.jpg
 384233,"Illustration for Jérôme Paturot à la recherche d'une position sociale (Jérôme Patruot in Search of a Social Position), by Louis Reybaud, Paris, 1846",J. J. Grandville,Drawings and Prints,ca. 1846,"Pen and brown ink, brush and wash, and white heightening.",data\raw\images\384233.jpg
+370754,Wooded Landscape with Stag Hunt,Tobias Verhaecht,Drawings and Prints,late 16th–early 17th century,"Black chalk, pen and brown ink, brown wash",data\raw\images\370754.jpg
+347924,Songs of Innocence: Laughing Song,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347924.jpg
 347926,Songs of Innocence: A Cradle Song (second plate),William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347926.jpg
 347930,Songs of Innocence: Night (second plate),William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347930.jpg
+347927,Songs of Innocence: The Divine Image,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347927.jpg
 347928,Songs of Innocence: Holy Thursday,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347928.jpg
 347932,Songs of Innocence: Spring (second plate),William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347932.jpg
+347936,Songs of Innocence: On Anothers Sorrow,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347936.jpg
 347925,Songs of Innocence: A Cradle Song,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347925.jpg
 347934,Songs of Innocence: Infant Joy,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347934.jpg
+347931,Songs of Innocence: Spring,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347931.jpg
 347933,Songs of Innocence: Nurse's Song,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347933.jpg
 347929,Songs of Innocence: Night,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347929.jpg
+347935,Songs of Innocence: A Dream,William Blake,Drawings and Prints,[1794] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347935.jpg
 347922,Songs of Innocence: Little Boy Lost,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347922.jpg
 347923,Songs of Innocence: The Little Boy Found,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347923.jpg
+347906,Songs of Innocence: The Little Black Boy,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347906.jpg
 347904,Songs of Innocence: The Ecchoing Green (second plate),William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347904.jpg
+347905,Songs of Innocence: The Lamb,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347905.jpg
 347889,Songs of Innocence: Title Page,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347889.jpg
 347901,Songs of Innocence: Introduction,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347901.jpg
 347903,Songs of Innocence: The Ecchoing Green,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347903.jpg
+347907,Songs of Innocence: The Little Black Boy (second plate),William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347907.jpg
 347918,Songs of Innocence: The Chimney Sweeper,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347918.jpg
 347902,Songs of Innocence: The Shepherd,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347902.jpg
+347908,Songs of Innocence: The Blossom,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347908.jpg
+742534,University,Thomas Rowlandson,Drawings and Prints,"May 10, 1802",Hand-colored etching,data\raw\images\742534.jpg
 811771,A Seaman's Wife's Reckoning,Thomas Rowlandson,Drawings and Prints,"July 15, 1812",Hand-colored etching,data\raw\images\811771.jpg
 811772,A Seaman's Wife's Reckoning,Thomas Rowlandson,Drawings and Prints,"July 15, 1812",Hand-colored etching,data\raw\images\811772.jpg
 283126,Scène près d'un étang au moulin du Petit-Mourmelon,Gustave Le Gray,Photographs,1857,Albumen silver print from glass negative,data\raw\images\283126.jpg
-893754,Panel from a jewelry casket: Krishna slays Putana,,Asian Art,ca. mid-16th century,Ivory,data\raw\images\893754.jpg
-45532,Copy of a Dogū (Clay Figurine),,Asian Art,,Earthenware with cord-marked and incised decoration (Tōhoku region),data\raw\images\45532.jpg
-211351,Antoine-Jean Gros,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1832,Bronze,data\raw\images\211351.jpg
-230978,Delphine Gay,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,Bronze,data\raw\images\230978.jpg
-210290,"Prosper Merimée (1803–1870), French man-of-letters, historian and novelist",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, brown patina, hollow cast",data\raw\images\210290.jpg
-210292,"Jean-Baptiste Jourdan  (1762–1833), Marshal of France",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\210292.jpg
-208063,Charles-Antoine Callamard (1769–1821),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,mid-19th century,Bronze,data\raw\images\208063.jpg
-194627,"Claude-Joseph Ferry (1756–1845), French savant and statesman",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1839,Proof in bronze - single,data\raw\images\194627.jpg
-188431,"Carl Gustave Carus (1789–1869), Saxon physician, man-of-letters, and painter",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1834,"Bronze, cast - single",data\raw\images\188431.jpg
-188420,"Maurice Etienne Comte de Gerard, (1773–1852), Marshal of France",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, cast - single",data\raw\images\188420.jpg
-188429,"Joseph Louis Gay-Lussac, French physician and scientist (1778–1850)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830s,"Bronze, cast - single",data\raw\images\188429.jpg
-188424,"Alphonse Milbert, Advocate",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1838 (?),"Bronze, cast - single",data\raw\images\188424.jpg
-188421,"Pierre Paul Royer-Collard (1763–1845), French editor, philosopher, statesman, and Member of the Academy",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1830,"Bronze, cast - single",data\raw\images\188421.jpg
-188412,"Louis Boulanger (1806–1867), French historical painter",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188412.jpg
-188443,"Louis Prudhomme (1752–1830), French journalist and pamphleteer",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188443.jpg
-188459,"Charles Augustin Sainte-Beuve (1804–1869), French man-of-letters and Academician",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188459.jpg
-188466,"Jean François Bodin (1776–1829), French civil-servant and historian",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, cast - single",data\raw\images\188466.jpg
-188467,"Marie Henry Beyle (1783–1842), French novelist and critic, better known by his nom de plume ""De Stendhal""",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1829,"Bronze, cast - single",data\raw\images\188467.jpg
-236752,Alphonse de Lamartine,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,"1830, cast before 1856",Bronze,data\raw\images\236752.jpg
-231795,"Henri Bernardin de Saint-Pierre (1737–1814), writer",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1844–56,Bronze,data\raw\images\231795.jpg
-236329,François-Noël Babeuf,Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1844–56,Bronze,data\raw\images\236329.jpg
-188448,"Adèle Hugo (née Foucher, wife of Victor Hugo) (d. 1868)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1828,"Bronze, brown patina, hollow cast",data\raw\images\188448.jpg
-190660,"Napoleon Bonaparte, depicted about the time of his first campaign (1796)",Pierre Jean David d'Angers,European Sculpture and Decorative Arts,after model 1838,"Bronze, cast",data\raw\images\190660.jpg
-239522,Mélanie Waldor (1796–1871),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1835,Cast bronze with golden brown patina,data\raw\images\239522.jpg
-370754,Wooded Landscape with Stag Hunt,Tobias Verhaecht,Drawings and Prints,late 16th–early 17th century,"Black chalk, pen and brown ink, brown wash",data\raw\images\370754.jpg
-347924,Songs of Innocence: Laughing Song,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347924.jpg
-347927,Songs of Innocence: The Divine Image,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347927.jpg
-347936,Songs of Innocence: On Anothers Sorrow,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347936.jpg
-347931,Songs of Innocence: Spring,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347931.jpg
-347935,Songs of Innocence: A Dream,William Blake,Drawings and Prints,[1794] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347935.jpg
-347906,Songs of Innocence: The Little Black Boy,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347906.jpg
-347905,Songs of Innocence: The Lamb,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347905.jpg
-347907,Songs of Innocence: The Little Black Boy (second plate),William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347907.jpg
-347908,Songs of Innocence: The Blossom,William Blake,Drawings and Prints,[1789] printed ca. 1825,Relief etching printed in orange-brown ink and hand-colored with watercolor and shell gold,data\raw\images\347908.jpg
-742534,University,Thomas Rowlandson,Drawings and Prints,"May 10, 1802",Hand-colored etching,data\raw\images\742534.jpg
 706316,Vase with poems in a panoramic landscape,,Asian Art,late 17th century,Porcelain painted with cobalt blue under transparent glaze (Jingdezhen ware),data\raw\images\706316.jpg
+893754,Panel from a jewelry casket: Krishna slays Putana,,Asian Art,ca. mid-16th century,Ivory,data\raw\images\893754.jpg
 268706,"Henry Taylor. Author of ""Philip Van Artevelde""",Julia Margaret Cameron,Photographs,1864,Albumen silver print from glass negative,data\raw\images\268706.jpg
+45532,Copy of a Dogū (Clay Figurine),,Asian Art,,Earthenware with cord-marked and incised decoration (Tōhoku region),data\raw\images\45532.jpg
 195862,Standing cup with cover,,European Sculpture and Decorative Arts,ca. 1755,Glass,data\raw\images\195862.jpg
 211512,Epigonation (Palitsa),,European Sculpture and Decorative Arts,16th–17th century,"Silk, metal thread, and pearl embroidery on a foundation of silk satin; tassels of metal thread and pearls",data\raw\images\211512.jpg
 443176,Engraved Lamp Stand with Interlocking Circles,,Islamic Art,probably 16th century,"Brass; cast, engraved, and inlaid with black compound",data\raw\images\443176.jpg
@@ -750,6 +777,12 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 53167,Flying Apsaras (Hiten),,Asian Art,late 11th to early 12th century,Japanese cypress with lacquer and gold,data\raw\images\53167.jpg
 819943,The True Peace Commissioners,Currier & Ives,Drawings and Prints,1865,Lithograph,data\raw\images\819943.jpg
 436884,The Chess Players,Liberale da Verona,European Paintings,ca. 1475,Tempera on wood,data\raw\images\436884.jpg
+436885,Scene from a Novella,Liberale da Verona,European Paintings,,Tempera on wood,data\raw\images\436885.jpg
+13875,"Quilt, Presentation pattern",Mary Hergenroder Simon,The American Wing,ca. 1849,Cotton and silk velvet,data\raw\images\13875.jpg
+466195,Leaf from a Beatus Manuscript: Seven Angels Hold the Cups of the Seven Last Plagues; The Hymn of the Lamb,,The Cloisters,ca. 1180,"Tempera, gold, and ink on parchment",data\raw\images\466195.jpg
+452315,Double-Ended Bellini-Design Kazak Carpet,,Islamic Art,dated 1212 AH/1797 CE,"Wool (warp, weft, and pile); symmetrically woven pile",data\raw\images\452315.jpg
+468350,Case (étui) with an amorous inscription,,Medieval Art,1450–1500,"Leather (Cuir bouilli), wood core, red cord",data\raw\images\468350.jpg
+53458,Lingering Rain over Half the Village,Urakami (Uragami) Gyokudō,Asian Art,ca. 1815–20,Folding fan mounted as a hanging scroll; ink on paper,data\raw\images\53458.jpg
 75963,Pilgrim's Visiting Album,,Asian Art,18th century,"One from a set of four albums; calligraphy on gilt paper and paper, paintings in ink, color, and gold on paper, mounted on paper, covers of silk embroidery with colored and metallic thread",data\raw\images\75963.jpg
 75962,Pilgrim's Visiting Album,,Asian Art,18th century,"One from a set of four albums; calligraphy on gilt paper and paper, paintings in ink, color, and gold on paper, mounted on paper, covers of silk embroidery with colored and metallic thread",data\raw\images\75962.jpg
 75964,Pilgrim's Visiting Album,,Asian Art,18th century,"One from a set of four albums; calligraphy on gilt paper and paper, paintings in ink, color, and gold on paper, mounted on paper, covers of silk embroidery with colored and metallic thread",data\raw\images\75964.jpg
@@ -762,8 +795,6 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 231921,Side chair (one of four) (part of a set),,European Sculpture and Decorative Arts,ca. 1763–64,"Carved, painted and gilded limewood; squab pillow in silk velvet (not original)",data\raw\images\231921.jpg
 233017,Upholstery panels for a side chair,,European Sculpture and Decorative Arts,ca. 1763–64,"Silk, painted",data\raw\images\233017.jpg
 233020,Upholstery panels for a side chair,,European Sculpture and Decorative Arts,ca. 1763–64,"Silk, painted",data\raw\images\233020.jpg
-233021,Upholstery panels for an armchair,,European Sculpture and Decorative Arts,ca. 1763–64,"Silk, painted",data\raw\images\233021.jpg
-233022,Upholstery panels for an armchair,,European Sculpture and Decorative Arts,ca. 1764–64,"Silk, painted",data\raw\images\233022.jpg
 205398,Tobacco box,,European Sculpture and Decorative Arts,18th century,Copper,data\raw\images\205398.jpg
 505742,Harp Guitar,Joseph Laurent Mast,Musical Instruments,1827,"Spruce, maple, iron, nickel silver",data\raw\images\505742.jpg
 822751,"Severe Weather, from ""Illustrated London News""",William Luson Thomas,Drawings and Prints,"March 22, 1856",Wood engraving,data\raw\images\822751.jpg
@@ -792,6 +823,11 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 239498,Bottle vase with birds,R. W. Martin and Brothers,European Sculpture and Decorative Arts,1899,Stoneware,data\raw\images\239498.jpg
 239504,Small vase with birds,R. W. Martin and Brothers,European Sculpture and Decorative Arts,1905,Stoneware,data\raw\images\239504.jpg
 239506,Vase,Frank A. Butler,European Sculpture and Decorative Arts,1879,Stoneware,data\raw\images\239506.jpg
+239505,Plaque depicting a pottery workshop,R. W. Martin and Brothers,European Sculpture and Decorative Arts,ca. 1882,Terracotta,data\raw\images\239505.jpg
+16854,Campeche Chair,,The American Wing,ca. 1800–1810,"Mahogany and mahogany veneer, light and dark wood inlay, and leather",data\raw\images\16854.jpg
+49433,The Immortal Li Tieguai,Su Renshan,Asian Art,,Hanging scroll; ink on paper,data\raw\images\49433.jpg
+452996,Bead,,Islamic Art,11th century,Gold; filigree and granulation,data\raw\images\452996.jpg
+337769,"Four Tulips:  Boter man (Butter Man), Joncker (Nobleman), Grote geplumaceerde (The Great Plumed One), and Voorwint (With the Wind)",Jacob Marrel,Drawings and Prints,ca. 1635–45,watercolor on vellum,data\raw\images\337769.jpg
 324432,Jar with a frieze of bulls,,Ancient West Asian Art,ca. 8th–7th century BCE,Glazed ceramic,data\raw\images\324432.jpg
 841644,Collaborative Painting of Sixteen Arhats,Suzuki Hyakunen 鈴木百年,Asian Art,late 1870s–early 1880s,Hanging scroll; ink and color on satin,data\raw\images\841644.jpg
 197461,Saint Bernardino of Siena,Fulvio Signorini,European Sculpture and Decorative Arts,ca. 1600,"Bronze, partially oil-gilt",data\raw\images\197461.jpg
@@ -804,13 +840,6 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 436098,The Crucifixion,Gerard David,European Paintings,ca. 1495,Oil on wood,data\raw\images\436098.jpg
 712539,Saint Philip Neri (1515–1595),Carlo Dolci,European Paintings,1645 or 1646,Oil on canvas,data\raw\images\712539.jpg
 450418,Bowl,,Islamic Art,late 12th–early 13th century,Stonepaste; polychrome painted under transparent glaze,data\raw\images\450418.jpg
-328593,Monstrous male figure,,Ancient West Asian Art,ca. late 3rd–early 2nd millennium BCE,"Chlorite, calcite, gold, iron",data\raw\images\328593.jpg
-733112,Valentine,Anonymous,Drawings and Prints,ca. 1860,"Cameo-embossed,   open-work lace paper,   watercolor, die-cut scraps, gilt and silvered scrap, satin, silk moire, ink",data\raw\images\733112.jpg
-55406,Recently Imported Big Elephant,Ichiryūsai Yoshitoyo,Asian Art,1863 (3rd month),Diptych of woodblock prints; ink and color on paper,data\raw\images\55406.jpg
-201447,Plate with The Vision of Alcyone and arms of Jacopo Pisaro,Fra Xanto Avelli da Rovigo,European Sculpture and Decorative Arts,1535,"Maiolica (tin-glazed earthenware), lustered",data\raw\images\201447.jpg
-765766,Valentine,Kate Greenaway,Drawings and Prints,ca. 1880,"White card stock with gilding; chromolithography, gold lithography, beige paper, red watercolor, cameo-embossed lace paper",data\raw\images\765766.jpg
-767805,Valentine,Anonymous,Drawings and Prints,before 1880,"White card stock with chromolithography, gold lithography, openwork lace paper",data\raw\images\767805.jpg
-339015,A Diablerie,Guercino (Giovanni Francesco Barbieri),Drawings and Prints,1591–1666,Pen and brown ink,data\raw\images\339015.jpg
 452102,Damascus Room,,Islamic Art,dated 1119 AH/1707 CE,"Wood (poplar) with gesso relief, gold and tin leaf, glazes and paint; wood (cypress, poplar, and mulberry), mother-of-pearl, marble and other stones, stucco with glass, plaster ceramic tiles, iron, brass",data\raw\images\452102.jpg
 437995,Roses in a Bowl,Henri Fantin-Latour,European Paintings,1883,Oil on canvas,data\raw\images\437995.jpg
 256974,"Marble stele (grave marker) with a youth and little girl, and a capital and finial in the form of a sphinx",,Greek and Roman Art,ca. 530 BCE,Marble,data\raw\images\256974.jpg
@@ -838,6 +867,10 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 254896,Terracotta amphora (jar),Berlin Painter,Greek and Roman Art,ca. 490 BCE,Terracotta,data\raw\images\254896.jpg
 468346,"The Antioch ""Chalice""",,The Cloisters,500–550,"Silver, silver-gilt",data\raw\images\468346.jpg
 219421,Sampler,,European Sculpture and Decorative Arts,1804,Silk on linen,data\raw\images\219421.jpg
+193654,Rosary,,European Sculpture and Decorative Arts,probably third quarter 19th century,"Onyx, gold, enamel",data\raw\images\193654.jpg
+361740,"Mary, Princess of Orange",Wenceslaus Hollar,Drawings and Prints,1641,Etching; first state of two,data\raw\images\361740.jpg
+227160,Fragments of a textile with Medici emblems,,European Sculpture and Decorative Arts,ca. 1492,"Silk, metal thread",data\raw\images\227160.jpg
+702924,Alphonse de Gisors (1796–1866),Pierre Jean David d'Angers,European Sculpture and Decorative Arts,1827,Bronze,data\raw\images\702924.jpg
 711275,Design for a Valance with Bundles and Garlands of Flowers and Leaves,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711275.jpg
 712164,Design for a Valance in with Thin Bushes and Garlands of Flowers and a Shell Motif with a Hanging Curtain,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\712164.jpg
 711309,Design for a Valance in the Style of Louis XVI with Bundles and Garlands of Flowers and an Ornamental Frame with a Tiger Face,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711309.jpg
@@ -864,17 +897,12 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 711310,Design for a Valance with Bundles and Garlands of Flowers and Musical Instruments,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711310.jpg
 711322,Design for a Valance with Bundles and Garlands of Flowers and a Monogram Presenting Two Design Variants,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711322.jpg
 711339,Design for a Valance with Bundles and Garlands of Flowers and Leaves Decorated with Gardening Tools upon which Small Birds Rest,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711339.jpg
-712099,Design for a Chair Back Cover with a Squatting Half-Human Grotesque Figure Inside an Ornamental Frame Made of Two Cornucopias Holding Bundles of Leaves and Fruits and Scrolls of Leaves and Flowers,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor and Gouache,data\raw\images\712099.jpg
-711298,"Design for a Valance in the Style of Louis XVI with Bushes and Garlands of Flowers and Containing Two Decorative Bunches of Leaves, Fruits and Flowers Holding Gardening Utensils and a Straw Hat","Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711298.jpg
-711357,Design for a Chair Back Cover with an Ornamental Frame Formed by a Garland of Leaves and Flowers with an Interlacing Ribbon that Forms a Bow from which a Crown Motif with a Monogram Hangs,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711357.jpg
-711284,Design for Wallpaper with Alternating Vertical Rows of Pairs of Ornamental Frames of Two Sizes Framed by Interlacing Garlands of Laurel Leaves Tied by a Bow,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Graphite and Watercolor,data\raw\images\711284.jpg
 711313,Design for a Panel or Wallpaper (?) with an Ornamental Frame with Scrolls and a Shell Decorated with Garlands and Bundles of Flowers and Fruits and a Monogrammed Oval Frame,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711313.jpg
 712104,Design for a Chair Back Cover with an Oval-Shaped Ornamental Frame with a Kneeling Woman and a Playful Putto Surrounded by Garlands of Leaves and Flowers and Scrolling Acanthus Leaves Inside a Larger Ornamental Frame,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor and gouache,data\raw\images\712104.jpg
 203062,Two Opera Singers,Meissen Manufactory,European Sculpture and Decorative Arts,1749–50,Hard-paste porcelain,data\raw\images\203062.jpg
 323943,Jug in the form of a recumbent bull,,Ancient West Asian Art,ca. 7th–6th century BCE,"Ceramic, paint",data\raw\images\323943.jpg
 268303,Album di disegni fotogenici,William Henry Fox Talbot,Photographs,1839–40,Salted paper prints,data\raw\images\268303.jpg
 418427,View Near Fishkill (No. 17 of The Hudson River Portfolio),John Hill,Drawings and Prints,1823–24,Aquatint printed in color with hand-coloring; first state of two or three (Koke),data\raw\images\418427.jpg
-451726,"""Shaikh San'an beneath the Window of the Christian Maiden"", Folio18r  from a Mantiq al-Tayr (Language of the Birds)",Farid al-Din `Attar,Islamic Art,ca. 1600,"Opaque watercolor, silver, and gold on paper",data\raw\images\451726.jpg
 205737,Settee (one of a pair) (part of a set),Johann Michael Bauer,European Sculpture and Decorative Arts,ca. 1763–64,"Carved, painted and gilded linden wood; squab pillow in silk velvet (not original)",data\raw\images\205737.jpg
 775441,Valentine: Puzzle Purse,"Anonymous, British or American, 19th century",Drawings and Prints,1826,"Watercolor, gold paint",data\raw\images\775441.jpg
 44285,Insects and Grasses,Yamamoto Baiitsu,Asian Art,dated 1847,Handscroll; ink and color on silk,data\raw\images\44285.jpg
@@ -883,14 +911,6 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 436180,The Natchez,Eugène Delacroix,European Paintings,1823–24 and 1835,Oil on canvas,data\raw\images\436180.jpg
 546708,Round-topped Stela of Wenenkhu,,Egyptian Art,ca. 1275–1237 B.C.,Limestone,data\raw\images\546708.jpg
 437216,The Fifteen Mysteries and the Virgin of the Rosary,Netherlandish (Brussels) Painter,European Paintings,ca. 1515–20,Oil on wood,data\raw\images\437216.jpg
-437173,Don Andrés de Andrade y la Cal,Bartolomé Estebán Murillo,European Paintings,ca. 1665–72,Oil on canvas,data\raw\images\437173.jpg
-435897,Head of Christ (Ecce Homo),Petrus Christus,European Paintings,ca. 1445,"Oil on parchment, laid down on wood",data\raw\images\435897.jpg
-436897,Saint Lawrence Enthroned with Saints and Donors,Fra Filippo Lippi,European Paintings,1440s,"Tempera on wood, gold ground",data\raw\images\436897.jpg
-437530,"Portrait of a Man, Possibly an Architect or Geographer",Peter Paul Rubens,European Paintings,1597,Oil on copper,data\raw\images\437530.jpg
-437800,The Investiture of Bishop Harold as Duke of Franconia,Giovanni Battista Tiepolo,European Paintings,ca. 1751–52,Oil on canvas,data\raw\images\437800.jpg
-248698,Terracotta kylix (drinking cup),Euphronios,Greek and Roman Art,ca. 490 BCE,Terracotta,data\raw\images\248698.jpg
-474199,Reliquary Cross,,The Cloisters,ca. 1180,"Silver gilt, rock crystal, glass cabochons, and possible human remains; wood core",data\raw\images\474199.jpg
-751900,Votive checkerboard tunic,Inca artist(s),The Michael C. Rockefeller Wing,1460–1626,Camelid fiber,data\raw\images\751900.jpg
 13877,"Quilt, Album pattern",Brown and Turner families,The American Wing,begun 1846,Cotton,data\raw\images\13877.jpg
 839044,Gudvangen,Thomas Fearnley,European Paintings,1839,"Oil on paper, laid down on wood",data\raw\images\839044.jpg
 711347,Design for a Sofa Seat Cover (?) with an Ornamental Frame Containing a Vase with a Large Bundle of Flowers and Leaves and Decorated with Acanthus Leaves and Two Fleurs de Lys,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711347.jpg
@@ -899,6 +919,9 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 712106,Design for a Chair Seat Cover with an Ornamental Frame with Two Restling Putti with Hanging Garlands of Leaves and Flowers Inside a Larger Ornamental Frame Featuring a Heart-Shape Motif,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor and Gouache,data\raw\images\712106.jpg
 711358,Design for a Chair Back Cover with an Ornamental Frame Formed by a Garland of Leaves and Flowers with an Interlacing Ribbon that Forms a Bow from which a Crown Motif with Monogram Hangs,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711358.jpg
 711343,Design for a Valance with Thin Garlands and Bundles of Flowers and a Lyre Inside an Ornamental Frame with Scrolling Motifs Presenting Two Different Variations for the Design,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711343.jpg
+711316,Design for Wallpaper with Alternating Vertical Rows of Pairs of Ornamental Frames of Two Sizes Framed by Interlacing Garlands of Laurel Leaves Tied by a Bow,"Anonymous, French, 19th century",Drawings and Prints,1870–1900 (?),Watercolor,data\raw\images\711316.jpg
+322896,"Head of a beardless royal attendant, possibly a eunuch",,Ancient West Asian Art,ca. 721–705 BCE,Gypsum alabaster,data\raw\images\322896.jpg
+736196,Valentine,Anonymous,Drawings and Prints,1879,"Cameo-embossed  lace paper, chromolithography, graphite",data\raw\images\736196.jpg
 50168,Winter landscape with fisherman,Shi Zhong,Asian Art,late 15th–early 16th century,Hanging scroll; ink on paper,data\raw\images\50168.jpg
 853090,A Desert [sic]–Imitation of Modern Fashion,William Heath ('Paul Pry'),Drawings and Prints,ca. 1828,Hand-colored etching,data\raw\images\853090.jpg
 61532,Stele with Maitreya and attendant bodhisattvas,,Asian Art,dated 534 (3rd year of Yongxi reign),Stone,data\raw\images\61532.jpg
@@ -929,13 +952,16 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 283219,"The Grizzly Giant, Mariposa Grove, Yosemite",Carleton E. Watkins,Photographs,1861,Albumen silver print from glass negative,data\raw\images\283219.jpg
 449671,Inscribed Seal,,Islamic Art,10th–11th century,Jet; incised,data\raw\images\449671.jpg
 437547,Grainfields,Jacob van Ruisdael,European Paintings,mid- or late 1660s,Oil on canvas,data\raw\images\437547.jpg
-193340,Wine can,Christoph Stange,European Sculpture and Decorative Arts,late 17th century,Pewter,data\raw\images\193340.jpg
 37807,"Yamantaka, Destroyer of the God of Death",,Asian Art,early 18th century,Distemper on cloth,data\raw\images\37807.jpg
 924978,"""Bahram Gur in the Red Pavilion"", Folio from a Haft Paikar (Seven Portraits) of the Khamsa (Quintet) of Nizami of Ganja",Nizami,Islamic Art,ca. 1520,"Ink, opaque watercolor, silver, and gold on paper",data\raw\images\924978.jpg
 469869,Double Cup,,The Cloisters,1325–50,"Silver, gilded silver, and enamel",data\raw\images\469869.jpg
 49074,"Landscapes, Flowers and Birds",Xiang Shengmo,Asian Art,dated 1639,Album of eight paintings; ink and color on paper,data\raw\images\49074.jpg
 464132,Right Leaf of a Diptych,,Medieval Art,14th century,Elephant ivory,data\raw\images\464132.jpg
 53454,Two Poems from the Collection of Ancient and Modern Poems (Kokin wakashū),Ike no Taiga,Asian Art,1734,Hanging scroll; ink on paper,data\raw\images\53454.jpg
+53401,Taking Shelter from the Rain,Hanabusa Itchō,Asian Art,after 1709,Six-panel folding screen; ink and color on paper,data\raw\images\53401.jpg
+464256,Top Panel of a Box,,Medieval Art,ca. 1320–40,Elephant ivory,data\raw\images\464256.jpg
+436529,"L'Arlésienne: Madame Joseph-Michel Ginoux (Marie Julien, 1848–1911)",Vincent van Gogh,European Paintings,1888–89,Oil on canvas,data\raw\images\436529.jpg
+764636,The Last Toilet of Charlotte Corday,Lumb Stocks,Drawings and Prints,1869 or after,Engraving on chine collé,data\raw\images\764636.jpg
 365246,Seated Nude Young Man in Nearly Frontal View,Guercino (Giovanni Francesco Barbieri),Drawings and Prints,ca. 1618,"Modified black chalk (dipped in a gum solution), traces of white gouache highlights, on light brown paper",data\raw\images\365246.jpg
 888663,Handscroll of Ten Homoerotic (Nanshoku) Scenes,Miyagawa Chōshun 宮川長春,Asian Art,early 18th century,Handscroll; ink and colors on silk,data\raw\images\888663.jpg
 198747,Bowl with cover (perfume burner),Giuseppe de' Levi,European Sculpture and Decorative Arts,1599,Bronze,data\raw\images\198747.jpg
@@ -975,29 +1001,3 @@ Margins: Gold on dyed paper",data\raw\images\446561.jpg
 437878,A Maid Asleep,Johannes Vermeer,European Paintings,ca. 1656–57,Oil on canvas,data\raw\images\437878.jpg
 435626,Porte de la Reine at Aigues-Mortes,Jean-Frédéric Bazille,European Paintings,1867,Oil on canvas,data\raw\images\435626.jpg
 898497,Henry Simons the Polish Jew,Thomas Worlidge,Drawings and Prints,1753,Etching; first state of two,data\raw\images\898497.jpg
-337497,Studies for the Libyan Sibyl (recto); Studies for the Libyan Sibyl and a small Sketch for a Seated Figure (verso),Michelangelo Buonarroti,Drawings and Prints,ca. 1510–11,"Red chalk, with small accents of white chalk on the left shoulder of the figure in the main study (recto); soft black chalk, or less probably charcoal (verso)",data\raw\images\337497.jpg
-436838,The Fortune-Teller,Georges de La Tour,European Paintings,probably 1630s,Oil on canvas,data\raw\images\436838.jpg
-437082,The Baker's Cart,Jean Michelin,European Paintings,1656,Oil on canvas,data\raw\images\437082.jpg
-201718,Street vendor,Mennecy,European Sculpture and Decorative Arts,ca. 1750–60,Soft-paste porcelain,data\raw\images\201718.jpg
-200840,Glass cooler (seau à verre),Saint-Cloud factory,European Sculpture and Decorative Arts,ca. 1725–30,"Soft-paste porcelain decorated in polychrome enamels, gold",data\raw\images\200840.jpg
-228995,"The New Testament, The Book of Common Prayer",Robert Barker,European Sculpture and Decorative Arts,ca. 1636,"Silk, bullion, silver, and silver-gilt thread on canvas and satin",data\raw\images\228995.jpg
-202686,Longcase clock,Thomas Dickenson,European Sculpture and Decorative Arts,ca. 1807,"Case: rosewood, coniferous wood veneered with mahogany and inlaid with bands of holly, stained holly and bone, and brass; Dial: painted enamel on copper with brass hour hands; Movement: brass and steel",data\raw\images\202686.jpg
-312743,Nose Ornament,,The Michael C. Rockefeller Wing,300 BCE–700 CE,Gold alloy,data\raw\images\312743.jpg
-788371,Female Politicians,Thomas Rowlandson,Drawings and Prints,1815 (copy after),Hand-colored etching,data\raw\images\788371.jpg
-316796,Receptacle with Figurative Relief and Stopper,,The Michael C. Rockefeller Wing,1880–1890,Ivory,data\raw\images\316796.jpg
-451274,"""Haji Husain Bukhari"", Folio from the Shah Jahan Album",,Islamic Art,recto: early 19th century; verso: later copy of 16th century original,"Ink, opaque watercolor, and gold on paper",data\raw\images\451274.jpg
-451264,"""Jahangir and his Father, Akbar"", Folio from the Shah Jahan Album",Balachand,Islamic Art,verso: ca. 1630; recto: ca.1540–50,"Ink, opaque watercolor, and gold on paper",data\raw\images\451264.jpg
-382959,"Norham Castle on the Tweed, part XII, plate 57 from ""Liber Studiorum""",Joseph Mallord William Turner,Drawings and Prints,"January 1, 1816",Etching and mezzotint; first state of three,data\raw\images\382959.jpg
-372597,Drury Lane,James McNeill Whistler,Drawings and Prints,[1880–81],"Etching, printed in brownish-black ink on cream laid paper; only state (Glasgow)",data\raw\images\372597.jpg
-437868,"Don Gaspar de Guzmán (1587–1645), Count-Duke of Olivares",Juan Bautista Martínez del Mazo,European Paintings,ca. 1636 or later,Oil on canvas,data\raw\images\437868.jpg
-436551,"Ferdinand VII (1784–1833), When Prince of Asturias",Goya,European Paintings,ca. 1800,Oil on canvas,data\raw\images\436551.jpg
-435621,Joan of Arc,Jules Bastien-Lepage,European Paintings,1879,Oil on canvas,data\raw\images\435621.jpg
-437384,Salome,Henri Regnault,European Paintings,1870,Oil on canvas,data\raw\images\437384.jpg
-437984,"La Berceuse (Woman Rocking a Cradle; Augustine-Alix Pellicot Roulin, 1851–1930)",Vincent van Gogh,European Paintings,1889,Oil on canvas,data\raw\images\437984.jpg
-451287,"""Page of Calligraphy Illuminated with Animals and Plants in a Field of Flowers"", Folio from the Shah Jahan Album",Nanha,Islamic Art,verso: ca. 1610–15; recto: ca.1535–45,"Ink, opaque watercolor, and gold on paper",data\raw\images\451287.jpg
-197742,Armchair (part of a set),Nicolas-Quinibert Foliot,European Sculpture and Decorative Arts,ca. 1754–56,Carved and gilded beech; wool and silk tapestry,data\raw\images\197742.jpg
-197738,Settee (canapé) (part of a set),Nicolas-Quinibert Foliot,European Sculpture and Decorative Arts,ca. 1754–56,Carved and gilded beech; wool and silk tapestry,data\raw\images\197738.jpg
-197740,Armchair (part of a set),Nicolas-Quinibert Foliot,European Sculpture and Decorative Arts,ca. 1754–56,Carved and gilded beech; wool and silk tapestry,data\raw\images\197740.jpg
-197744,Armchair (part of a set),Nicolas-Quinibert Foliot,European Sculpture and Decorative Arts,ca. 1754–56,Carved and gilded beech; wool and silk tapestry,data\raw\images\197744.jpg
-340575,Design Fragment for the Left Side of the 'Fonte Gaia' in Siena,Jacopo della Quercia (Jacopo di Pietro d’Angelo di Guarnieri),Drawings and Prints,1415–16,"Pen and medium brown ink, brush and brown wash, over traces of leadpoint and ruling, on vellum, glued onto secondary paper support",data\raw\images\340575.jpg
-436103,Virgin and Child,Gerard David,European Paintings,ca. 1520,Oil on wood,data\raw\images\436103.jpg
