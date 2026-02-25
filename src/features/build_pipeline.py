@@ -530,8 +530,11 @@ def run_build(  # noqa: PLR0912, PLR0915
             device=clip_device,
             batch_size=clip_batch_size,
         )
+        logger.info("CLIP: encoding %d text descriptions...", len(clip_text_inputs))
         clip_text_embeddings = encoder.encode_texts(clip_text_inputs)
+        logger.info("CLIP: text encoding done. Encoding %d images...", len(clip_image_paths))
         clip_image_embeddings, clip_image_errors = encoder.encode_images(clip_image_paths)
+        logger.info("CLIP: image encoding done (%d errors).", len(clip_image_errors))
         if clip_image_errors:
             for item in clip_image_errors:
                 idx_txt, reason = item.split(":", maxsplit=1)
