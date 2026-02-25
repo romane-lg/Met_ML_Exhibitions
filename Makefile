@@ -1,19 +1,18 @@
-.PHONY: setup setup-win setup-lfs lfs-pull lint format type test coverage serve build-features train-ranker evaluate-backends evaluate-comprehensive compare-clip streamlit streamlit-tfidf streamlit-clip
+.PHONY: run setup clean lfs-pull lint format type test coverage serve build-features train-ranker evaluate-backends evaluate-comprehensive compare-clip streamlit streamlit-tfidf docker-up docker-down
+
+export PYTHONPATH := .
+
+# Run the full pipeline from scratch: install deps → build features → train → launch UI
+run: setup build-features train-ranker streamlit
 
 setup:
-	mkdir -p .tmp .uv-cache
-	TMP=.tmp TEMP=.tmp UV_CACHE_DIR=.uv-cache uv sync --all-extras
-	git lfs install
-	git lfs pull
+	uv sync --all-extras
+	uv run python -c "import sklearn, lightgbm, psutil, PIL, open_clip, torch; print('OK: sklearn', sklearn.__version__, '| lightgbm', lightgbm.__version__, '| psutil', psutil.__version__, '| PIL', PIL.__version__)"
 
-setup-win:
-	powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup_env.ps1
-	git lfs install
-	git lfs pull
-
-setup-lfs:
-	git lfs install
-	git lfs pull
+clean:
+	-Remove-Item -Recurse -Force .venv 2>NUL || rmdir /s /q .venv 2>NUL || rm -rf .venv
+	uv sync --all-extras
+	uv run python -c "import sklearn, lightgbm, psutil, PIL, open_clip, torch; print('OK: sklearn', sklearn.__version__, '| lightgbm', lightgbm.__version__, '| psutil', psutil.__version__, '| PIL', PIL.__version__)"
 
 lfs-pull:
 	git lfs pull
@@ -37,13 +36,11 @@ serve:
 	uv run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
 streamlit:
-	PYTHONPATH=. uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+
+	uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
 
 streamlit-tfidf:
-	PYTHONPATH=. MET_ARTIFACTS_DIR=artifacts_tfidf MET_AUTO_BUILD_ON_STARTUP=false MET_ENABLE_VISION=false uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
-
-streamlit-clip:
-	PYTHONPATH=. MET_ARTIFACTS_DIR=artifacts_clip MET_AUTO_BUILD_ON_STARTUP=false MET_ENABLE_VISION=false uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+	cmd /c "set MET_ARTIFACTS_DIR=artifacts_tfidf&& set MET_AUTO_BUILD_ON_STARTUP=false&& set MET_ENABLE_VISION=false&& uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0"
 
 build-features:
 	uv run python -m scripts.build_features
@@ -51,11 +48,16 @@ build-features:
 train-ranker:
 	uv run python -m scripts.train_ranker
 
-evaluate-backends:
-	uv run python -m scripts.evaluate_backends --artifacts artifacts_tfidf artifacts_clip --k 10
 
 evaluate-comprehensive:
 	uv run python -m scripts.evaluate_model_comprehensive --artifacts $${MET_ARTIFACTS_DIR:-artifacts} --top-k 8 --latency-runs 24 --json-out artifacts/eval_comprehensive.json --csv-out artifacts/eval_comprehensive.csv
 
 compare-clip:
 	uv run python -m scripts.compare_clip_modes --artifacts $${MET_ARTIFACTS_DIR:-artifacts}
+
+docker-up:
+	@if not exist .env copy .env.example .env
+	docker compose up --build
+
+docker-down:
+	docker compose down
