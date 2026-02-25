@@ -185,3 +185,91 @@ def test_from_artifacts_loads_numeric_and_ranker(tmp_path):
     rec = ExhibitionRecommender.from_artifacts(str(tmp_path))
     assert rec.numeric_features.shape == (2, 2)
     assert rec.ranker is not None
+
+
+def test_from_artifacts_clip_backend_routes_query_embedding(tmp_path, monkeypatch):
+    meta = pd.DataFrame(
+        {
+            "objectID": [10, 11],
+            "title": ["A", "B"],
+            "artist": ["x", "y"],
+            "department": ["d1", "d2"],
+            "objectDate": ["1900", "1901"],
+            "medium": ["m1", "m2"],
+            "image_path": ["images/10.jpg", "images/11.jpg"],
+        }
+    )
+    emb = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
+    np.savez_compressed(tmp_path / "embeddings.npz", embeddings=emb)
+    meta.to_csv(tmp_path / "meta.csv", index=False)
+    (tmp_path / "tokens.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "embedding_backend.json").write_text(
+        '{"backend":"clip","model_name":"ViT-B-32","pretrained":"laion2b_s34b_b79k","device":"cpu"}',
+        encoding="utf-8",
+    )
+    joblib.dump(
+        {
+            "model_name": "ViT-B-32",
+            "pretrained": "laion2b_s34b_b79k",
+            "device": "cpu",
+            "batch_size": 32,
+        },
+        tmp_path / "clip_metadata.joblib",
+    )
+
+    class DummyClipEncoder:
+        def __init__(self, *args, **kwargs):
+            del args, kwargs
+
+        def encode_texts(self, texts):
+            assert texts
+            return np.array([[1.0, 0.0]], dtype=np.float32)
+
+    monkeypatch.setattr("src.models.recommender.CLIPEncoder", DummyClipEncoder)
+    rec = ExhibitionRecommender.from_artifacts(str(tmp_path))
+    out = rec.recommend_for_theme("egypt", n_recommendations=1, min_score=0.0)
+    assert len(out) == 1
+    assert int(out.iloc[0]["object_id"]) == 10
+
+
+def test_clip_query_prompt_expansion_for_ambiguous_theme():
+    prompts = ExhibitionRecommender._clip_query_prompts("portrait")
+    assert "portrait painting of a person" in prompts
+    assert any("museum artwork depicting" in prompt for prompt in prompts)
+
+
+def test_clip_lexical_guardrail_blends_scores(monkeypatch):
+    meta = pd.DataFrame(
+        {
+            "objectID": [1, 2],
+            "title": ["Portrait of a Woman", "Saber"],
+            "artist": ["x", "y"],
+            "department": ["Paintings", "Arms and Armor"],
+            "objectDate": ["1900", "1800"],
+            "medium": ["oil", "metal"],
+            "image_path": ["images/1.jpg", "images/2.jpg"],
+        }
+    )
+    embeddings = np.array([[1.0, 0.0], [1.0, 0.0]], dtype=np.float32)
+    rec = ExhibitionRecommender(
+        embeddings,
+        meta,
+        text_vectorizer=None,
+        embedding_backend="clip",
+        clip_model_name="ViT-B-32",
+        clip_pretrained="laion2b_s34b_b79k",
+        clip_similarity_weight=0.2,
+        clip_lexical_weight=0.8,
+    )
+
+    class DummyClipEncoder:
+        def __init__(self, *args, **kwargs):
+            del args, kwargs
+
+        def encode_texts(self, texts):
+            del texts
+            return np.array([[1.0, 0.0]], dtype=np.float32)
+
+    monkeypatch.setattr("src.models.recommender.CLIPEncoder", DummyClipEncoder)
+    scores = rec.score_by_tokens(["portrait"])
+    assert scores[0] > scores[1]

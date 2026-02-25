@@ -30,6 +30,8 @@ dependencies = [
   "streamlit-chat",
   "tqdm",
   "transformers",
+  "torch",
+  "open_clip_torch",
   "uvicorn[standard]",
   "lightgbm",
 ]

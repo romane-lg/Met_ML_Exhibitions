@@ -64,6 +64,18 @@ features:
   normalize: true
   scaler: "standard"  # standard, minmax, or robust
 
+# Embedding Backend Selection
+embeddings:
+  # Supported: tfidf, clip
+  backend: "tfidf"
+  clip:
+    model_name: "ViT-B-32"
+    pretrained: "laion2b_s34b_b79k"
+    device: "cpu"
+    batch_size: 32
+    text_weight: 0.5
+    image_weight: 0.5
+
 # Clustering
 clustering:
   # K-Means
@@ -108,6 +120,7 @@ app:
   title: "MET Exhibition AI Curator"
   page_icon: "🎨"
   layout: "wide"
+  auto_build_on_startup: false
   
   # Display settings
   max_images_per_page: 20

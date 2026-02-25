@@ -1,0 +1,8 @@
+{
+  "backend": "clip",
+  "dimension": 512,
+  "timestamp_utc": "2026-02-24T14:50:52.248655+00:00",
+  "model_name": "ViT-B-32",
+  "pretrained": "laion2b_s34b_b79k",
+  "device": "cpu"
+}
