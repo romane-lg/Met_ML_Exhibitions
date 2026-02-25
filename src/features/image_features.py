@@ -9,7 +9,6 @@ from typing import Any
 import pandas as pd
 
 from src.features.nlp_utils import tokenize_text
-from src.loaders import VisionAPILoader
 
 
 def normalize_vision_text(text: str) -> str:
@@ -147,33 +146,6 @@ def extract_numeric_features(features: dict[str, Any]) -> dict[str, float]:
     }
 
 
-class ImageFeatureExtractor:
-    """Adapter that loads raw Vision response and returns cleaned features."""
-
-    def __init__(self, credentials_path: str | None = None):
-        self.loader = VisionAPILoader(credentials_path=credentials_path)
-
-    def extract_features(self, image_path: str, max_results: int = 10) -> dict[str, Any]:
-        raw = self.loader.load_image_features(image_path, max_results=max_results)
-        return clean_vision_response(raw)
-
-    def batch_extract(
-        self,
-        image_paths: list[str],
-        max_results: int = 10,
-        save_path: str | None = None,
-    ) -> pd.DataFrame:
-        rows: list[dict[str, Any]] = []
-        for path in image_paths:
-            item = self.extract_features(path, max_results=max_results)
-            item["image_path"] = str(path)
-            rows.append(item)
-        frame = pd.DataFrame(rows)
-        if save_path:
-            frame.to_pickle(save_path)
-        return frame
-
-
 def extract_label_vector(features_df: pd.DataFrame, top_n: int = 50) -> pd.DataFrame:
     from collections import Counter
 
@@ -194,9 +166,4 @@ def extract_label_vector(features_df: pd.DataFrame, top_n: int = 50) -> pd.DataF
     return pd.DataFrame(vectors)
 
 
-if __name__ == "__main__":
-    extractor = ImageFeatureExtractor()
-    sample = Path("data/raw/images/398746.jpg")
-    if sample.exists():
-        out = extractor.extract_features(str(sample))
-        print("labels", out.get("labels", [])[:3])
+

@@ -18,12 +18,10 @@ class StubSettings:
         artifacts_dir: str,
         *,
         auto_build_on_startup: bool,
-        enable_vision: bool,
         embedding_backend: str,
     ) -> None:
         self.artifacts_dir = artifacts_dir
         self.auto_build_on_startup = auto_build_on_startup
-        self.enable_vision = enable_vision
         self.embedding_backend = embedding_backend
         self.clip_model_name = "ViT-B-32"
         self.clip_pretrained = "laion2b_s34b_b79k"
@@ -34,7 +32,6 @@ class StubSettings:
         self.clip_retrieval_weight = 0.8
         self.clip_lexical_weight = 0.2
         self.clip_prompt_ensemble = True
-        self.google_credentials = None
 
 
 def test_bootstrap_inference_only_default_does_not_autobuild(tmp_path, monkeypatch):
@@ -48,7 +45,6 @@ def test_bootstrap_inference_only_default_does_not_autobuild(tmp_path, monkeypat
     settings = StubSettings(
         artifacts_dir=str(tmp_path),
         auto_build_on_startup=False,
-        enable_vision=False,
         embedding_backend="tfidf",
     )
     status = ensure_artifacts(cast(Settings, settings))
@@ -78,13 +74,13 @@ def test_bootstrap_autobuild_uses_selected_backend(tmp_path, monkeypatch):
             },
             artifacts / "clip_metadata.joblib",
         )
+        joblib.dump(object(), artifacts / "lightgbm_ranker.joblib")
 
     monkeypatch.setattr("src.bootstrap.run_build", fake_run_build)
 
     settings = StubSettings(
         artifacts_dir=str(tmp_path),
         auto_build_on_startup=True,
-        enable_vision=False,
         embedding_backend="clip",
     )
     status = ensure_artifacts(cast(Settings, settings))
@@ -98,11 +94,11 @@ def test_bootstrap_backward_compatible_without_backend_metadata(tmp_path):
     (tmp_path / "tokens.json").write_text(json.dumps({"1": {"text": [], "image": []}}), encoding="utf-8")
     vec = TfidfVectorizer().fit(["art"])
     joblib.dump(vec, tmp_path / "text_vectorizer.joblib")
+    joblib.dump(object(), tmp_path / "lightgbm_ranker.joblib")
 
     settings = StubSettings(
         artifacts_dir=str(tmp_path),
         auto_build_on_startup=False,
-        enable_vision=False,
         embedding_backend="tfidf",
     )
     status = ensure_artifacts(cast(Settings, settings))

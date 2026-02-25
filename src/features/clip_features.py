@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
+import math
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError
+
+logger = logging.getLogger(__name__)
 
 
 def l2_normalize(arr: np.ndarray) -> np.ndarray:
@@ -53,8 +57,10 @@ class CLIPEncoder:
         assert self._model is not None
         assert self._tokenizer is not None
         vectors: list[np.ndarray] = []
-        for start in range(0, len(texts), self.batch_size):
+        n_batches = math.ceil(len(texts) / self.batch_size)
+        for batch_num, start in enumerate(range(0, len(texts), self.batch_size), 1):
             batch = texts[start : start + self.batch_size]
+            logger.info("CLIP text encoding: batch %d/%d (%d texts)", batch_num, n_batches, len(batch))
             with self._torch.no_grad():
                 tokens = self._tokenizer(batch).to(self.device)
                 feats = self._model.encode_text(tokens)
@@ -92,11 +98,14 @@ class CLIPEncoder:
             except (UnidentifiedImageError, OSError, ValueError):
                 errors.append(f"{idx}:unsupported_or_corrupt_image")
 
-        for start in range(0, len(valid_indices), self.batch_size):
+        n_batches = math.ceil(len(valid_indices) / self.batch_size) if valid_indices else 0
+        logger.info("CLIP image encoding: %d valid images, %d skipped, %d batches", len(valid_indices), len(errors), n_batches)
+        for batch_num, start in enumerate(range(0, len(valid_indices), self.batch_size), 1):
             batch_indices = valid_indices[start : start + self.batch_size]
             batch_tensors = tensors[start : start + self.batch_size]
             if not batch_tensors:
                 continue
+            logger.info("CLIP image encoding: batch %d/%d (%d images)", batch_num, n_batches, len(batch_indices))
             stacked = self._torch.stack(batch_tensors).to(self.device)
             with self._torch.no_grad():
                 feats = self._model.encode_image(stacked)

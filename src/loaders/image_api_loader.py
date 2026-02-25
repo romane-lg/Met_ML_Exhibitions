@@ -1,57 +1,32 @@
 from __future__ import annotations
 
 import logging
-import time
 from pathlib import Path
 from typing import Any
-
-from google.cloud import vision
-from google.oauth2 import service_account
 
 logger = logging.getLogger(__name__)
 
 
 class VisionAPILoader:
-    """Load raw image analysis from Google Vision API."""
+    """Stub – Google Vision API support has been removed.
+
+    This class is kept for backward compatibility with any code that imports it,
+    but instantiation will raise a RuntimeError.  The pure data-conversion helper
+    ``_to_raw_dict`` is preserved for tests that use mock response objects.
+    """
 
     def __init__(self, credentials_path: str | None = None, max_retries: int = 2, retry_delay: float = 0.5):
-        self.max_retries = max_retries
-        self.retry_delay = retry_delay
-        if credentials_path:
-            credentials = service_account.Credentials.from_service_account_file(credentials_path)
-            self.client = vision.ImageAnnotatorClient(credentials=credentials)
-        else:
-            self.client = vision.ImageAnnotatorClient()
+        raise RuntimeError(
+            "Google Vision API support has been removed from this project. "
+            "Remove any code that constructs VisionAPILoader."
+        )
 
     def load_image_features(self, image_path: str, max_results: int = 10) -> dict[str, Any]:
+        """Always returns an empty dict (no API calls are made)."""
         path = Path(image_path)
         if not path.exists():
-            logger.error("Image not found: %s", path)
+            logger.warning("Image not found: %s", path)
             return {}
-
-        content = path.read_bytes()
-        image = vision.Image(content=content)
-        features = [
-            vision.Feature(type_=vision.Feature.Type.LABEL_DETECTION, max_results=max_results),
-            vision.Feature(type_=vision.Feature.Type.OBJECT_LOCALIZATION, max_results=max_results),
-            vision.Feature(type_=vision.Feature.Type.IMAGE_PROPERTIES),
-            vision.Feature(type_=vision.Feature.Type.WEB_DETECTION, max_results=max_results),
-            vision.Feature(type_=vision.Feature.Type.TEXT_DETECTION),
-        ]
-        request = vision.AnnotateImageRequest(image=image, features=features)
-
-        for attempt in range(self.max_retries + 1):
-            try:
-                response = self.client.annotate_image(request)
-                if response.error.message:
-                    logger.error("Vision API error for %s: %s", path, response.error.message)
-                    return {}
-                return self._to_raw_dict(response)
-            except Exception as exc:
-                if attempt >= self.max_retries:
-                    logger.error("Vision request failed for %s: %s", path, exc)
-                    return {}
-                time.sleep(self.retry_delay * (attempt + 1))
         return {}
 
     @staticmethod
