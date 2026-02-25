@@ -70,6 +70,13 @@ def test_resolve_image_path_from_project_root_prefix():
     assert path == Path.cwd() / "data" / "raw" / "images" / "123.jpg"
 
 
+def test_resolve_image_path_windows_backslashes_on_any_platform():
+    """CSV written on Windows uses backslashes; must resolve correctly on Mac/Linux too."""
+    from pathlib import Path
+    path = resolve_image_path("data\\raw\\images\\123.jpg", "/some/project/data/raw/images")
+    assert path == Path.cwd() / "data" / "raw" / "images" / "123.jpg"
+
+
 def test_resolve_image_path_bare_filename():
     path = resolve_image_path("123.jpg", "data/raw/images")
     assert str(path).replace("\\", "/").endswith("data/raw/images/123.jpg")

@@ -44,7 +44,8 @@ def tokenize_local(text: str) -> list[str]:
 
 
 def resolve_image_path(raw_image_path: str, images_dir: str) -> Path:
-    path = Path(raw_image_path)
+    # Normalize separators so Windows-style paths work on Mac/Linux too
+    path = Path(raw_image_path.replace("\\", "/"))
     if path.is_absolute():
         return path
 
