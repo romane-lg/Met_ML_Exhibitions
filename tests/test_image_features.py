@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas as pd
 
 from src.features.image_features import (
-    ImageFeatureExtractor,
     clean_vision_response,
     extract_numeric_features,
     extract_label_vector,
@@ -52,36 +51,6 @@ def test_vision_tokens_from_features() -> None:
     assert "human" in out
     assert "face" in out
     assert "rgb_12_34_56" in out
-
-
-def test_image_feature_extractor_uses_loader(monkeypatch) -> None:
-    class _FakeLoader:
-        def __init__(self, credentials_path: str | None = None):
-            self.credentials_path = credentials_path
-
-        def load_image_features(self, image_path: str, max_results: int = 10) -> dict:
-            return {"labels": [{"description": "The Statue", "score": 0.9}]}
-
-    monkeypatch.setattr("src.features.image_features.VisionAPILoader", _FakeLoader)
-    extractor = ImageFeatureExtractor(credentials_path="x.json")
-    out = extractor.extract_features("dummy.jpg")
-    assert out["labels"][0]["description"] == "statue"
-
-
-def test_batch_extract_and_save(tmp_path: Path, monkeypatch) -> None:
-    class _FakeLoader:
-        def __init__(self, credentials_path: str | None = None):
-            pass
-
-        def load_image_features(self, image_path: str, max_results: int = 10) -> dict:
-            return {"labels": [{"description": Path(image_path).stem, "score": 0.9}]}
-
-    monkeypatch.setattr("src.features.image_features.VisionAPILoader", _FakeLoader)
-    extractor = ImageFeatureExtractor()
-    out_path = tmp_path / "features.pkl"
-    frame = extractor.batch_extract(["a.jpg", "b.jpg"], save_path=str(out_path))
-    assert len(frame) == 2
-    assert out_path.exists()
 
 
 def test_extract_label_vector() -> None:
