@@ -39,7 +39,7 @@ def main() -> None:
     parser.add_argument("--text-weight", type=float, default=1.0)
     parser.add_argument("--vision-weight", type=float, default=1.0)
     parser.add_argument("--numeric-weight", type=float, default=1.0)
-    parser.add_argument("--embedding-backend", choices=["tfidf", "clip"], default="tfidf")
+    parser.add_argument("--embedding-backend", choices=["tfidf", "clip"], default="clip")
     parser.add_argument("--clip-model-name", type=str, default="ViT-B-32")
     parser.add_argument("--clip-pretrained", type=str, default="laion2b_s34b_b79k")
     parser.add_argument("--clip-device", type=str, default="cpu")
