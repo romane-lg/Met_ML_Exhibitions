@@ -7,7 +7,7 @@ import re
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import joblib
 import numpy as np
@@ -17,12 +17,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import StandardScaler, normalize
 
 from src.config import get_settings
+from src.features.clip_features import CLIPEncoder, l2_normalize
 from src.features.image_features import (
     clean_vision_response,
     extract_numeric_features,
     vision_tokens_from_features,
 )
-from src.loaders import VisionAPILoader
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +44,20 @@ def tokenize_local(text: str) -> list[str]:
 
 
 def resolve_image_path(raw_image_path: str, images_dir: str) -> Path:
-    path = Path(raw_image_path)
+    # Normalize separators so Windows-style paths work on Mac/Linux too
+    path = Path(raw_image_path.replace("\\", "/"))
     if path.is_absolute():
         return path
 
     images_base = Path(images_dir)
-    if path.parts and path.parts[0].lower() == "images":
+    first = path.parts[0].lower() if path.parts else ""
+    if first == "images":
+        # e.g. "images/398746.jpg" → <images_dir>/398746.jpg
         return images_base.parent / path
+    if len(path.parts) > 1:
+        # e.g. "data/raw/images/398746.jpg" stored in CSV — resolve from project root
+        return Path.cwd() / path
+    # bare filename — append to images_dir
     return images_base / path
 
 
@@ -103,6 +110,13 @@ def _validate_combined_params(
     ):
         if value < 0.0:
             raise ValueError(f"{name} must be >= 0.")
+
+
+def _validate_embedding_backend(embedding_backend: str) -> Literal["tfidf", "clip"]:
+    backend = embedding_backend.strip().lower()
+    if backend not in {"tfidf", "clip"}:
+        raise ValueError("embedding_backend must be either 'tfidf' or 'clip'.")
+    return cast(Literal["tfidf", "clip"], backend)
 
 
 def build_numeric_feature_matrix(
@@ -310,7 +324,18 @@ def run_build(  # noqa: PLR0912, PLR0915
     text_weight: float = 1.0,
     vision_weight: float = 1.0,
     numeric_weight: float = 1.0,
+    embedding_backend: str = "clip",
+    clip_model_name: str = "ViT-B-32",
+    clip_pretrained: str = "laion2b_s34b_b79k",
+    clip_device: str = "cpu",
+    clip_batch_size: int = 32,
+    clip_text_weight: float = 0.5,
+    clip_image_weight: float = 0.5,
+    clip_retrieval_weight: float = 0.8,
+    clip_lexical_weight: float = 0.2,
+    clip_prompt_ensemble: bool = True,
 ) -> None:
+    backend = _validate_embedding_backend(embedding_backend)
     _validate_combined_params(
         pca_variance=pca_variance,
         pca_max_components=pca_max_components,
@@ -318,6 +343,14 @@ def run_build(  # noqa: PLR0912, PLR0915
         vision_weight=vision_weight,
         numeric_weight=numeric_weight,
     )
+    if clip_text_weight < 0.0 or clip_image_weight < 0.0:
+        raise ValueError("clip_text_weight and clip_image_weight must be >= 0.")
+    if backend == "clip" and clip_text_weight == 0.0 and clip_image_weight == 0.0:
+        raise ValueError("At least one of clip_text_weight or clip_image_weight must be > 0.")
+    if clip_retrieval_weight < 0.0 or clip_lexical_weight < 0.0:
+        raise ValueError("clip_retrieval_weight and clip_lexical_weight must be >= 0.")
+    if backend == "clip" and clip_retrieval_weight == 0.0 and clip_lexical_weight == 0.0:
+        raise ValueError("At least one of clip_retrieval_weight or clip_lexical_weight must be > 0.")
     settings = get_settings()
     data_csv = Path(settings.data_csv)
     artifacts = Path(settings.artifacts_dir)
@@ -330,12 +363,17 @@ def run_build(  # noqa: PLR0912, PLR0915
     meta_path = artifacts / "meta.csv"
     tok_path = artifacts / "tokens.json"
     vec_path = artifacts / "text_vectorizer.joblib"
+    clip_meta_path = artifacts / "clip_metadata.joblib"
+    backend_path = artifacts / "embedding_backend.json"
     if (
         emb_path.exists()
         and combined_path.exists()
         and meta_path.exists()
         and tok_path.exists()
-        and vec_path.exists()
+        and (
+            (backend == "tfidf" and vec_path.exists())
+            or (backend == "clip" and clip_meta_path.exists())
+        )
         and not force
     ):
         print("Artifacts already exist. Use --force to rebuild.")
@@ -352,21 +390,7 @@ def run_build(  # noqa: PLR0912, PLR0915
         offline,
     )
 
-    use_vision = not offline and settings.enable_vision
-    if use_vision:
-        creds_path = settings.google_credentials
-        if not creds_path:
-            raise RuntimeError(
-                "Vision output is missing and credentials are not set. "
-                "Add your key at config/service_account.json and set "
-                "GOOGLE_APPLICATION_CREDENTIALS=config/service_account.json in .env."
-            )
-        if not Path(creds_path).exists():
-            raise RuntimeError(
-                "Vision output is missing and credentials file was not found: "
-                f"{creds_path}. Add your key at config/service_account.json."
-            )
-    loader = VisionAPILoader(credentials_path=settings.google_credentials) if use_vision else None
+    loader = None  # Google Vision API has been removed; image tokens are always empty
     cache: dict[str, dict[str, list[str]]] = {}
     if tok_path.exists() and not force:
         cache = json.loads(tok_path.read_text(encoding="utf-8"))
@@ -388,6 +412,8 @@ def run_build(  # noqa: PLR0912, PLR0915
     docs = []
     text_docs = []
     vision_docs = []
+    clip_text_inputs: list[str] = []
+    clip_image_paths: list[Path | None] = []
     descriptions = []
     numeric_rows: list[dict[str, float | int]] = []
     vision_errors: list[dict[str, str]] = []
@@ -397,7 +423,13 @@ def run_build(  # noqa: PLR0912, PLR0915
         oid = str(object_id)
         logger.info("Processing %d/%d - objectID=%s", idx, total_rows, oid)
         row_series = pd.Series(row)
+        clip_text_inputs.append(build_text(row_series))
         numeric_features = extract_metadata_numeric_features(row_series)
+        image_path_obj: Path | None = resolve_image_path(
+            str(row.get("image_path", "") or ""),
+            settings.images_dir,
+        )
+        clip_image_paths.append(image_path_obj)
         if oid in cache and not force:
             text_tokens = cache[oid].get("text", [])
             image_tokens = cache[oid].get("image", [])
@@ -408,10 +440,7 @@ def run_build(  # noqa: PLR0912, PLR0915
             text_tokens = tokenize_local(text)
             image_tokens: list[str] = []
             if loader is not None:
-                image_path = resolve_image_path(
-                    str(row.get("image_path", "") or ""),
-                    settings.images_dir,
-                )
+                image_path = image_path_obj if image_path_obj is not None else Path("")
                 if not image_path.exists():
                     vision_errors.append(
                         {
@@ -485,9 +514,58 @@ def run_build(  # noqa: PLR0912, PLR0915
     if not any(d.strip() for d in docs):
         docs = ["_empty_"] * len(docs)
 
-    retrieval_vectorizer = TfidfVectorizer(min_df=1, max_features=10000, ngram_range=(1, 2))
-    mat = retrieval_vectorizer.fit_transform(docs)
-    emb = normalize(mat, norm="l2", axis=1).toarray().astype(np.float32)
+    retrieval_vectorizer: TfidfVectorizer | None = None
+    clip_metadata: dict[str, Any] | None = None
+    clip_text_embeddings: np.ndarray | None = None
+    clip_image_embeddings: np.ndarray | None = None
+
+    if backend == "tfidf":
+        retrieval_vectorizer = TfidfVectorizer(min_df=1, max_features=10000, ngram_range=(1, 2))
+        mat = retrieval_vectorizer.fit_transform(docs)
+        emb = normalize(mat, norm="l2", axis=1).toarray().astype(np.float32)
+    else:
+        encoder = CLIPEncoder(
+            model_name=clip_model_name,
+            pretrained=clip_pretrained,
+            device=clip_device,
+            batch_size=clip_batch_size,
+        )
+        logger.info("CLIP: encoding %d text descriptions...", len(clip_text_inputs))
+        clip_text_embeddings = encoder.encode_texts(clip_text_inputs)
+        logger.info("CLIP: text encoding done. Encoding %d images...", len(clip_image_paths))
+        clip_image_embeddings, clip_image_errors = encoder.encode_images(clip_image_paths)
+        logger.info("CLIP: image encoding done (%d errors).", len(clip_image_errors))
+        if clip_image_errors:
+            for item in clip_image_errors:
+                idx_txt, reason = item.split(":", maxsplit=1)
+                row_idx = int(idx_txt)
+                row_data = records[row_idx]
+                vision_errors.append(
+                    {
+                        "objectID": str(int(cast(float | int | str, row_data.get("objectID", 0)))),
+                        "image_path": str(clip_image_paths[row_idx]),
+                        "error": f"clip_{reason}",
+                    }
+                )
+        weighted = np.zeros_like(clip_text_embeddings, dtype=np.float32)
+        if clip_text_weight > 0.0:
+            weighted += clip_text_embeddings * np.float32(clip_text_weight)
+        if clip_image_weight > 0.0:
+            weighted += clip_image_embeddings * np.float32(clip_image_weight)
+        emb = l2_normalize(weighted)
+        clip_metadata = {
+            "model_name": clip_model_name,
+            "pretrained": clip_pretrained,
+            "device": clip_device,
+            "batch_size": int(clip_batch_size),
+            "text_weight": float(clip_text_weight),
+            "image_weight": float(clip_image_weight),
+            "retrieval_clip_weight": float(clip_retrieval_weight),
+            "retrieval_lexical_weight": float(clip_lexical_weight),
+            "prompt_ensemble": bool(clip_prompt_ensemble),
+            "embedding_dimension": int(emb.shape[1]) if emb.ndim == 2 else 0,
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+        }
 
     object_ids = df["objectID"].to_numpy(dtype=np.int64, copy=True)
     combined_payload = build_combined_embeddings_payload(
@@ -501,6 +579,9 @@ def run_build(  # noqa: PLR0912, PLR0915
         vision_weight=vision_weight,
         numeric_weight=numeric_weight,
     )
+    if backend == "clip" and clip_text_embeddings is not None and clip_image_embeddings is not None:
+        combined_payload["clip_text_embeddings"] = clip_text_embeddings
+        combined_payload["clip_image_embeddings"] = clip_image_embeddings
 
     np.savez_compressed(emb_path, embeddings=emb)
     atomic_pickle_dump(combined_payload, combined_path)
@@ -508,9 +589,29 @@ def run_build(  # noqa: PLR0912, PLR0915
     pd.DataFrame(descriptions).to_csv(artifacts / "descriptions.csv", index=False)
     if numeric_rows:
         pd.DataFrame(numeric_rows).to_csv(artifacts / "numeric_features.csv", index=False)
-    joblib.dump(retrieval_vectorizer, vec_path)
+    if backend == "tfidf" and retrieval_vectorizer is not None:
+        joblib.dump(retrieval_vectorizer, vec_path)
+    if backend == "clip" and clip_metadata is not None:
+        joblib.dump(clip_metadata, clip_meta_path)
+    backend_payload: dict[str, Any] = {
+        "backend": backend,
+        "dimension": int(emb.shape[1]) if emb.ndim == 2 else 0,
+        "timestamp_utc": datetime.now(UTC).isoformat(),
+    }
+    if clip_metadata is not None:
+        backend_payload.update(
+            {
+                "model_name": clip_metadata["model_name"],
+                "pretrained": clip_metadata["pretrained"],
+                "device": clip_metadata["device"],
+                "retrieval_clip_weight": clip_metadata["retrieval_clip_weight"],
+                "retrieval_lexical_weight": clip_metadata["retrieval_lexical_weight"],
+                "prompt_ensemble": clip_metadata["prompt_ensemble"],
+            }
+        )
+    backend_path.write_text(json.dumps(backend_payload, ensure_ascii=True, indent=2), encoding="utf-8")
     tok_path.write_text(json.dumps(cache, ensure_ascii=True, indent=2), encoding="utf-8")
     if vision_errors:
         pd.DataFrame(vision_errors).to_csv(artifacts / "vision_errors.csv", index=False)
         logger.warning("Vision extraction completed with %d image issues", len(vision_errors))
-    logger.info("Feature build completed. Artifacts written to %s", artifacts)
+    logger.info("Feature build completed with backend=%s. Artifacts written to %s", backend, artifacts)

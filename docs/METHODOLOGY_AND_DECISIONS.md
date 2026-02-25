@@ -49,12 +49,15 @@ This document explains the implementation additions made to productionize the pr
   - `artifacts/descriptions.csv`
   - `artifacts/numeric_features.csv`
   - `artifacts/text_vectorizer.joblib`
+  - `artifacts/embedding_backend.json`
+  - `artifacts/clip_metadata.joblib` (CLIP backend only)
 
 ### Startup Bootstrap
 - API and Streamlit both run a startup bootstrap check.
-- Required artifacts are validated (`embeddings.npz`, `meta.csv`, `tokens.json`, `text_vectorizer.joblib`).
-- If missing, the app attempts to build them automatically.
-- If Google Vision output is missing and credentials are not configured, startup surfaces a clear message to add `config/service_account.json` and set `.env` values.
+- Required artifacts are validated (`embeddings.npz`, `meta.csv`, `tokens.json`, and backend-specific metadata).
+- Startup defaults to inference-only mode: if artifacts are missing, startup returns a clear setup error.
+- Optional maintainer override: `MET_AUTO_BUILD_ON_STARTUP=true` allows startup to trigger rebuild.
+- Vision API enrichment has been removed; the startup no longer checks for Vision credentials.
 
 ### Ranker Phase (optional)
 - Script: `scripts/train_ranker.py`
@@ -62,11 +65,8 @@ This document explains the implementation additions made to productionize the pr
 
 ## Feature/Model Improvements Implemented
 ### 1) Image Pipeline Split and Cleaning
-- Added `src/loaders/image_api_loader.py` to isolate raw Google Vision API request/response and retry logic.
-- Refactored `src/features/image_features.py` to focus on transformation only:
-  - response normalization
-  - stopword removal and lemmatization
-  - token extraction
+- **Google Vision API has been removed.** `src/loaders/image_api_loader.py` exists as a tombstone stub that raises `RuntimeError` on construction; it should not be called.
+- `src/features/image_features.py` retains its transformation helpers (`clean_vision_response`, `vision_tokens_from_features`) but the code path that calls them (`enable_vision=True`) is inert — `MET_ENABLE_VISION` defaults to `false` and the dependency is gone.
 - Added `scripts/cleanup_invalid_images.py` to detect/remove corrupt/non-image files by binary signature.
 
 ### 2) Shared NLP Preprocessing
@@ -113,6 +113,14 @@ This document explains the implementation additions made to productionize the pr
   - `config`
   - `metrics` (including explained variance and selected component count)
 
+### 6) Dual Embedding Backends (TF-IDF and CLIP)
+- The project now supports two retrieval backends:
+  - `tfidf` (legacy baseline)
+  - `clip` (OpenCLIP-based multimodal retrieval vectors)
+- Backend selection is explicit (`MET_EMBEDDING_BACKEND` or CLI `--embedding-backend`).
+- Backward compatibility is preserved for existing TF-IDF artifacts.
+- New metadata file `embedding_backend.json` records which backend produced the artifacts.
+
 ### Serve Phase
 - API: `src/api/main.py`
 - UI: `src/app/streamlit_app.py`
@@ -128,16 +136,31 @@ The project uses a hybrid of image-derived and text-derived signals because them
 - Works well with sparse metadata fields and short descriptions.
 - Easy to inspect for debugging query mismatch.
 
-### Why Vision-Derived Tokens for Image Signals
-- Uses labels, localized objects, web entities, OCR text, and color signatures from Vision.
-- Produces interpretable tokens that can be merged with text features.
-- Expands semantic coverage beyond metadata-only descriptions.
-- Suitable for cold-start when no interaction data exists.
+### Why Add CLIP
+- CLIP places text and images in a shared semantic vector space.
+- This enables stronger cross-modal retrieval (text query to image-aware representation).
+- It reduces dependence on handcrafted token overlap for semantic matching.
+
+### ~~Why Vision-Derived Tokens for Image Signals~~ (Removed)
+- Google Vision API support has been fully removed from this project.
+- `VisionAPILoader` raises `RuntimeError` on construction as a guardrail.
+- The `enable_vision` config flag and related code paths remain in source as inert dead code pending cleanup.
+- Visual signal is now handled entirely by the CLIP image encoder.
 
 ### Why Combined Embeddings
 - Single vector space simplifies retrieval and scoring.
 - Preserves compatibility with nearest-neighbor search and ranker features.
 - Supports both API and Streamlit from the same artifact set.
+
+### Tradeoff Table (Legacy vs CLIP)
+| Dimension | TF-IDF/LDA (Legacy) | OpenCLIP (New) |
+|---|---|---|
+| Interpretability | High (token weights visible) | Medium (dense learned features) |
+| Semantic generalization | Moderate | Stronger |
+| Build cost (CPU) | Lower | Higher |
+| Startup latency | Similar (artifact load) | Similar (artifact load) |
+| Dependency complexity | Lower | Higher (`torch`, `open_clip_torch`) |
+| Backward compatibility | Existing baseline | Added as optional backend |
 
 ### Why Cosine Similarity
 - Robust to magnitude differences in sparse/high-dimensional vectors.
@@ -167,26 +190,34 @@ The project uses a hybrid of image-derived and text-derived signals because them
 ## Consumer vs Maintainer Modes
 ### Consumer Mode
 - Goal: run app using prebuilt artifacts.
-- Required:
-  - `MET_ENABLE_VISION=false`
-- No external Vision API usage.
+- No external API credentials required.
+- Vision API has been removed; `MET_ENABLE_VISION` is always effectively `false`.
 
 ### Maintainer Mode
-- Goal: rebuild/update artifacts.
-- Required:
-  - `MET_ENABLE_VISION=true`
-  - valid `GOOGLE_APPLICATION_CREDENTIALS`
-  - valid `GOOGLE_CLOUD_PROJECT`
-- If Vision is enabled and credentials are missing, build fails fast with clear errors.
+- Goal: rebuild/update artifacts from scratch.
+- Required: raw data at `data/raw/met_data.csv` and images at `data/raw/images/`.
+- Run `make build-features` then `make train-ranker`.
+- No external API credentials needed. CLIP runs locally on CPU (or GPU if available).
+
+> **Note:** The original Maintainer Mode required `GOOGLE_APPLICATION_CREDENTIALS` and `GOOGLE_CLOUD_PROJECT` for Vision API enrichment. That requirement is gone.
 
 ## Configuration
 Environment variables expected in `.env`:
-- `GOOGLE_APPLICATION_CREDENTIALS`
-- `GOOGLE_CLOUD_PROJECT`
 - `MET_DATA_CSV`
 - `MET_IMAGES_DIR`
 - `MET_ARTIFACTS_DIR`
-- `MET_ENABLE_VISION`
+- `MET_EMBEDDING_BACKEND` (`tfidf` or `clip`; default `clip`)
+- `MET_AUTO_BUILD_ON_STARTUP` (`false` by default)
+- `MET_CLIP_MODEL_NAME`
+- `MET_CLIP_PRETRAINED`
+- `MET_CLIP_DEVICE`
+- `MET_CLIP_BATCH_SIZE`
+- `MET_CLIP_TEXT_WEIGHT`
+- `MET_CLIP_IMAGE_WEIGHT`
+- `MET_CLIP_RETRIEVAL_WEIGHT`
+- `MET_CLIP_LEXICAL_WEIGHT`
+
+> **Removed:** `GOOGLE_APPLICATION_CREDENTIALS`, `GOOGLE_CLOUD_PROJECT`, and `MET_ENABLE_VISION` are no longer used. Vision API support has been removed.
 
 Template reference: `.env.example`
 
@@ -207,7 +238,7 @@ Template reference: `.env.example`
 - `tests/test_recommender.py`: scoring, grouping, coherence behavior.
 - `tests/test_api.py`: API health and recommendation endpoint.
 - `tests/test_feature_builder.py`: feature builder utility checks.
-- `tests/test_image_api_loader.py`: Vision loader mapping/error path tests.
+- `tests/test_image_api_loader.py`: Tests the `VisionAPILoader` tombstone stub (raises `RuntimeError` on construction).
 - `tests/test_image_features.py`: response cleaning, tokenization, numeric extraction.
 - `tests/test_nlp_utils.py`: shared tokenizer behavior.
 - `locustfile.py`: baseline load test scenario.

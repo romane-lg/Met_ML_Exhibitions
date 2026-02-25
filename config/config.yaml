@@ -13,18 +13,6 @@ data:
   raw_data_path: "data/raw/met_data.csv"
   images_path: "data/raw/images/"
 
-# Google Vision API
-vision_api:
-  max_results: 10
-  features:
-    - LABEL_DETECTION
-    - OBJECT_LOCALIZATION
-    - IMAGE_PROPERTIES
-    - WEB_DETECTION
-    - TEXT_DETECTION
-  batch_size: 16
-  rate_limit_delay: 0.1  # seconds between requests
-
 # Text Analytics
 text_features:
   # TF-IDF Parameters
@@ -63,6 +51,18 @@ features:
   # Normalization
   normalize: true
   scaler: "standard"  # standard, minmax, or robust
+
+# Embedding Backend Selection
+embeddings:
+  # Supported: tfidf, clip
+  backend: "clip"
+  clip:
+    model_name: "ViT-B-32"
+    pretrained: "laion2b_s34b_b79k"
+    device: "cpu"
+    batch_size: 32
+    text_weight: 0.5
+    image_weight: 0.5
 
 # Clustering
 clustering:
@@ -108,6 +108,7 @@ app:
   title: "MET Exhibition AI Curator"
   page_icon: "🎨"
   layout: "wide"
+  auto_build_on_startup: false
   
   # Display settings
   max_images_per_page: 20

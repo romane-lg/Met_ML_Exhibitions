@@ -63,6 +63,25 @@ def test_resolve_image_path_from_images_prefix():
     assert str(path).replace("\\", "/").endswith("data/raw/images/123.jpg")
 
 
+def test_resolve_image_path_from_project_root_prefix():
+    """CSV stores full relative paths like 'data/raw/images/398746.jpg'."""
+    from pathlib import Path
+    path = resolve_image_path("data/raw/images/123.jpg", "/some/project/data/raw/images")
+    assert path == Path.cwd() / "data" / "raw" / "images" / "123.jpg"
+
+
+def test_resolve_image_path_windows_backslashes_on_any_platform():
+    """CSV written on Windows uses backslashes; must resolve correctly on Mac/Linux too."""
+    from pathlib import Path
+    path = resolve_image_path("data\\raw\\images\\123.jpg", "/some/project/data/raw/images")
+    assert path == Path.cwd() / "data" / "raw" / "images" / "123.jpg"
+
+
+def test_resolve_image_path_bare_filename():
+    path = resolve_image_path("123.jpg", "data/raw/images")
+    assert str(path).replace("\\", "/").endswith("data/raw/images/123.jpg")
+
+
 def test_is_supported_image_file(tmp_path):
     jpg = tmp_path / "ok.jpg"
     jpg.write_bytes(b"\xff\xd8\xff\xe0" + b"0" * 20)

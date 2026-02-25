@@ -1,7 +1,21 @@
-.PHONY: setup lint format type test coverage serve build-features train-ranker streamlit
+.PHONY: run setup clean lfs-pull lint format type test coverage serve build-features train-ranker evaluate-backends evaluate-comprehensive compare-clip streamlit streamlit-tfidf docker-up docker-down
+
+export PYTHONPATH := .
+
+# Run the full pipeline from scratch: install deps → build features → train → launch UI
+run: setup build-features train-ranker streamlit
 
 setup:
 	uv sync --all-extras
+	uv run python -c "import sklearn, lightgbm, psutil, PIL, open_clip, torch; print('OK: sklearn', sklearn.__version__, '| lightgbm', lightgbm.__version__, '| psutil', psutil.__version__, '| PIL', PIL.__version__)"
+
+clean:
+	-Remove-Item -Recurse -Force .venv 2>NUL || rmdir /s /q .venv 2>NUL || rm -rf .venv
+	uv sync --all-extras
+	uv run python -c "import sklearn, lightgbm, psutil, PIL, open_clip, torch; print('OK: sklearn', sklearn.__version__, '| lightgbm', lightgbm.__version__, '| psutil', psutil.__version__, '| PIL', PIL.__version__)"
+
+lfs-pull:
+	git lfs pull
 
 lint:
 	uv run ruff check .
@@ -22,10 +36,28 @@ serve:
 	uv run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
 streamlit:
-	PYTHONPATH=. uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+
+	uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+
+streamlit-tfidf:
+	cmd /c "set MET_ARTIFACTS_DIR=artifacts_tfidf&& set MET_AUTO_BUILD_ON_STARTUP=false&& set MET_ENABLE_VISION=false&& uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0"
 
 build-features:
 	uv run python -m scripts.build_features
 
 train-ranker:
 	uv run python -m scripts.train_ranker
+
+
+evaluate-comprehensive:
+	uv run python -m scripts.evaluate_model_comprehensive --artifacts $${MET_ARTIFACTS_DIR:-artifacts} --top-k 8 --latency-runs 24 --json-out artifacts/eval_comprehensive.json --csv-out artifacts/eval_comprehensive.csv
+
+compare-clip:
+	uv run python -m scripts.compare_clip_modes --artifacts $${MET_ARTIFACTS_DIR:-artifacts}
+
+docker-up:
+	@if not exist .env copy .env.example .env
+	docker compose up --build
+
+docker-down:
+	docker compose down
