@@ -1,13 +1,10 @@
 import joblib
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from src.models import ExhibitionRecommender
-
-
-class DummyRanker:
-    pass
 
 
 def make_recommender() -> ExhibitionRecommender:
@@ -119,6 +116,8 @@ def test_rerank_falls_back_to_base_scores_on_ranker_error():
 
     reranked = rec._rerank_scores("egypt", qarr, base_scores, candidate_indices)
     assert np.allclose(reranked, base_scores[candidate_indices].astype(np.float32))
+    assert rec.last_reranker_status["reranker_used"] is False
+    assert str(rec.last_reranker_status["fallback_reason"]).startswith("xgboost_ranker_failed")
 
 
 def test_recommend_for_theme_applies_diversity_constraints():
@@ -180,7 +179,26 @@ def test_from_artifacts_loads_numeric_and_ranker(tmp_path):
         }
     ).to_csv(tmp_path / "numeric_features.csv", index=False)
 
-    joblib.dump(DummyRanker(), tmp_path / "lightgbm_ranker.joblib")
+    X_rank = np.array(
+        [
+            [0.1, 0.1, 0.1],
+            [0.2, 0.1, 0.0],
+            [0.9, 0.8, 0.1],
+            [0.8, 0.9, 0.2],
+        ],
+        dtype=np.float32,
+    )
+    y_rank = np.array([0, 0, 1, 1], dtype=np.float32)
+    ranker = xgb.XGBRanker(
+        objective="rank:ndcg",
+        n_estimators=5,
+        learning_rate=0.1,
+        max_depth=2,
+        random_state=42,
+        tree_method="hist",
+    )
+    ranker.fit(X_rank, y_rank, group=[2, 2], verbose=False)
+    ranker.save_model(str(tmp_path / "xgboost_ranker.json"))
 
     rec = ExhibitionRecommender.from_artifacts(str(tmp_path))
     assert rec.numeric_features.shape == (2, 2)
@@ -230,6 +248,8 @@ def test_from_artifacts_clip_backend_routes_query_embedding(tmp_path, monkeypatc
     out = rec.recommend_for_theme("egypt", n_recommendations=1, min_score=0.0)
     assert len(out) == 1
     assert int(out.iloc[0]["object_id"]) == 10
+    assert rec.last_reranker_status["reranker_used"] is False
+    assert rec.last_reranker_status["fallback_reason"] == "xgboost_ranker_missing"
 
 
 def test_clip_query_prompt_expansion_for_ambiguous_theme():
@@ -273,3 +293,25 @@ def test_clip_lexical_guardrail_blends_scores(monkeypatch):
     monkeypatch.setattr("src.models.recommender.CLIPEncoder", DummyClipEncoder)
     scores = rec.score_by_tokens(["portrait"])
     assert scores[0] > scores[1]
+
+
+def test_negation_intent_penalizes_excluded_concept():
+    meta = pd.DataFrame(
+        {
+            "objectID": [1, 2, 3],
+            "title": ["Portrait of a Man", "Portrait of a Woman", "Landscape"],
+            "artist": ["a", "b", "c"],
+            "department": ["Paintings", "Paintings", "Paintings"],
+            "objectDate": ["1900", "1900", "1900"],
+            "medium": ["oil", "oil", "oil"],
+            "image_path": ["images/1.jpg", "images/2.jpg", "images/3.jpg"],
+        }
+    )
+    docs = ["portrait man painting", "portrait woman painting", "landscape painting"]
+    vec = TfidfVectorizer().fit(docs)
+    embeddings = vec.transform(docs).toarray().astype(np.float32)
+    rec = ExhibitionRecommender(embeddings, meta, vec)
+
+    out = rec.recommend_for_theme("portrait painting no man", n_recommendations=2, min_score=0.0)
+    assert len(out) >= 1
+    assert int(out.iloc[0]["object_id"]) != 1

@@ -31,6 +31,8 @@ def test_health_endpoint():
     client = TestClient(app)
     r = client.get("/health")
     assert r.status_code == 200
+    body = r.json()
+    assert "xgboost_reranker_loaded" in body
 
 
 def test_theme_endpoint():
@@ -39,4 +41,8 @@ def test_theme_endpoint():
     client = TestClient(app)
     r = client.post("/recommendations/theme", json={"theme": "egypt", "k": 1, "min_similarity": 0.0})
     assert r.status_code == 200
-    assert "results" in r.json()
+    body = r.json()
+    assert "results" in body
+    assert "diagnostics" in body
+    assert "reranker_used" in body["diagnostics"]
+    assert "fallback_reason" in body["diagnostics"]
