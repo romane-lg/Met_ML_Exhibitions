@@ -189,7 +189,9 @@ def test_from_artifacts_loads_numeric_and_ranker(tmp_path):
         dtype=np.float32,
     )
     y_rank = np.array([0, 0, 1, 1], dtype=np.float32)
-    ranker = xgb.XGBRanker(
+    ranker_cls = getattr(xgb, "XGBRanker", None)
+    assert ranker_cls is not None
+    ranker = ranker_cls(
         objective="rank:ndcg",
         n_estimators=5,
         learning_rate=0.1,

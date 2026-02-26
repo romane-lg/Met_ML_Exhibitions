@@ -154,8 +154,10 @@ class ExhibitionRecommender:
             try:
                 import xgboost as xgb
 
-                ranker = xgb.XGBRanker()
-                ranker.load_model(str(ranker_path))
+                model_cls = getattr(xgb, "XGBRanker", None)
+                if model_cls is not None:
+                    ranker = model_cls()
+                    ranker.load_model(str(ranker_path))
             except Exception:
                 ranker = None
         lda_path = base / "lda_model.joblib"
@@ -216,7 +218,7 @@ class ExhibitionRecommender:
             mask = self.metadata["objectID"].astype("Int64").isin(excluded)
             scores[mask.to_numpy()] = -1.0
 
-        pool_size = min(len(self.metadata), max(n_recommendations * 8, 80))
+        pool_size = self._candidate_pool_size(n_recommendations, len(positive_tokens))
         ranked = np.argsort(scores)[::-1][:pool_size]
         qarr = self._query_vector(positive_tokens)
         reranked_scores = self._rerank_scores(theme_query, qarr, scores, ranked)
@@ -280,9 +282,10 @@ class ExhibitionRecommender:
         if self.embedding_backend != "clip":
             return clip_scores
         lexical_scores = self._lexical_scores(tokens)
+        sim_w, lex_w = self._adaptive_clip_weights(tokens)
         return (
-            (self.clip_similarity_weight * clip_scores)
-            + (self.clip_lexical_weight * lexical_scores)
+            (sim_w * clip_scores)
+            + (lex_w * lexical_scores)
         ).astype(np.float32)
 
     def _score_with_negation(
@@ -376,8 +379,54 @@ class ExhibitionRecommender:
                 "fallback_reason": f"xgboost_ranker_failed:{type(exc).__name__}",
             }
             return base
+        base_norm = self._calibrate_scores(base)
+        rank_norm = self._calibrate_scores(rank_scores)
+        agreement = 0.0
+        if base_norm.size > 1 and rank_norm.size > 1:
+            corr = np.corrcoef(base_norm, rank_norm)[0, 1]
+            if np.isfinite(corr):
+                agreement = float(max(0.0, corr))
+        rank_weight = 0.25 + (0.2 * agreement)
         self.last_reranker_status = {"reranker_used": True, "fallback_reason": None}
-        return (0.55 * base + 0.45 * rank_scores).astype(np.float32)
+        return ((1.0 - rank_weight) * base_norm + (rank_weight * rank_norm)).astype(np.float32)
+
+    def _candidate_pool_size(self, n_recommendations: int, token_count: int) -> int:
+        if token_count <= 2:
+            multiplier = 14
+        elif token_count <= 5:
+            multiplier = 11
+        else:
+            multiplier = 9
+        pool = max(n_recommendations * multiplier, 120)
+        if self.ranker is not None:
+            pool = int(pool * 1.3)
+        return min(len(self.metadata), pool)
+
+    def _adaptive_clip_weights(self, tokens: list[str]) -> tuple[float, float]:
+        sim_w = float(self.clip_similarity_weight)
+        lex_w = float(self.clip_lexical_weight)
+        if not tokens:
+            return sim_w, lex_w
+        if len(tokens) <= 2:
+            sim_w = min(0.9, sim_w + 0.1)
+        idf_values: list[float] = []
+        vocab = self._lexical_vectorizer.vocabulary_
+        idf_arr = getattr(self._lexical_vectorizer, "idf_", None)
+        if idf_arr is not None:
+            for tok in tokens:
+                idx = vocab.get(tok)
+                if idx is not None:
+                    idf_values.append(float(idf_arr[idx]))
+        if idf_values and idf_arr is not None:
+            idf_min = float(np.min(idf_arr))
+            idf_max = float(np.max(idf_arr))
+            span = max(idf_max - idf_min, 1e-6)
+            specificity = (float(np.mean(idf_values)) - idf_min) / span
+            lex_w = min(0.8, lex_w + (0.25 * specificity))
+        total = sim_w + lex_w
+        if total <= 0:
+            return 1.0, 0.0
+        return sim_w / total, lex_w / total
 
     @staticmethod
     def _calibrate_scores(scores: np.ndarray) -> np.ndarray:

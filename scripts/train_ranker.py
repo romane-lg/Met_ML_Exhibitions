@@ -165,7 +165,10 @@ def main() -> None:
         raise RuntimeError("No query groups available for XGBoost LTR training.")
     val_groups = _group_sizes(qid_val)
 
-    model = xgb.XGBRanker(
+    model_cls = getattr(xgb, "XGBRanker", None)
+    if model_cls is None:
+        raise RuntimeError("xgboost.XGBRanker is unavailable in this environment.")
+    model = model_cls(
         objective="rank:ndcg",
         n_estimators=500,
         learning_rate=0.05,
