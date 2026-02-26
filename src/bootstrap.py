@@ -44,17 +44,26 @@ def _required_artifacts(settings: Settings) -> list[Path]:
         required.append(base / "clip_metadata.joblib")
     else:
         required.append(base / "text_vectorizer.joblib")
-    required.append(base / "lightgbm_ranker.joblib")
     return required
 
 
 def _missing_artifact_message(missing: list[Path]) -> str:
     joined = ", ".join(str(path) for path in missing)
     return (
-        "Missing prebuilt artifacts. Run `make build-features && make train-ranker` "
+        "Missing prebuilt artifacts. Run `make build-features` "
         "(or enable startup rebuild with `MET_AUTO_BUILD_ON_STARTUP=true`) before launching the app. Missing: "
         f"{joined}"
     )
+
+
+def _ranker_warning(settings: Settings) -> str | None:
+    ranker_path = Path(settings.artifacts_dir) / "xgboost_ranker.json"
+    if not ranker_path.exists():
+        return (
+            "XGBoost reranker artifact not found (`xgboost_ranker.json`). "
+            "Running similarity-only ranking until `make train-ranker` is executed."
+        )
+    return None
 
 
 def ensure_artifacts(settings: Settings) -> BootstrapStatus:
@@ -87,4 +96,4 @@ def ensure_artifacts(settings: Settings) -> BootstrapStatus:
     if missing_after:
         return BootstrapStatus(ready=False, built=built, error=_missing_artifact_message(missing_after))
 
-    return BootstrapStatus(ready=True, built=built)
+    return BootstrapStatus(ready=True, built=built, warning=_ranker_warning(settings))
