@@ -40,7 +40,7 @@ serve:
 	uv run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
 streamlit:
-	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES KMP_DUPLICATE_LIB_OK=TRUE uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --server.fileWatcherType none
+	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES KMP_DUPLICATE_LIB_OK=TRUE OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --server.fileWatcherType none
 
 streamlit-tfidf:
 	cmd /c "set MET_ARTIFACTS_DIR=artifacts_tfidf&& set MET_AUTO_BUILD_ON_STARTUP=false&& set MET_ENABLE_VISION=false&& uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0"
