@@ -61,23 +61,10 @@ def load_recommender() -> tuple[ExhibitionRecommender | None, str | None, str | 
 def tokenize(text: str) -> list[str]:
     return [t.lower() for t in text.replace("/", " ").replace(";", " ").split() if t and t not in STOPWORDS]
 
-
-def extract_year(value: str | None) -> int | None:
-    if not value:
-        return None
-    digits = "".join(ch if ch.isdigit() else " " for ch in str(value)).split()
-    for token in digits:
-        if len(token) == 4:
-            return int(token)
-    return None
-
-
 def score_with_filters(
     frame: pd.DataFrame,
     colors: list[str],
-    styles: list[str],
-    year_min: int | None,
-    year_max: int | None,
+    styles: list[str]
 ) -> pd.DataFrame:
     if frame.empty:
         return frame
@@ -96,14 +83,6 @@ def score_with_filters(
     if styles:
         modifier += combo.apply(lambda x: sum(s in x for s in styles) * 0.03)
 
-    if year_min is not None or year_max is not None:
-        years = frame["object_date"].apply(extract_year)
-        valid = pd.Series(True, index=frame.index)
-        if year_min is not None:
-            valid &= years.fillna(-9999) >= year_min
-        if year_max is not None:
-            valid &= years.fillna(9999) <= year_max
-        modifier += valid.astype(float) * 0.05
 
     frame = frame.copy()
     frame["score"] = (frame["score"].astype(float) + modifier).clip(upper=1.0)
@@ -141,8 +120,7 @@ with col_logo:
 st.markdown("*Intelligent artwork recommendations for themed exhibitions*")
 st.divider()
 
-#st.title("MET Exhibition AI Curator")
-#st.write("Choose themes and generate grouped exhibition recommendations.")
+
 
 recommender, bootstrap_error, bootstrap_warning = load_recommender()
 if bootstrap_warning:
@@ -155,13 +133,11 @@ if recommender is None:
     st.stop()
 assert recommender is not None
 
-########
 if getattr(recommender, "ranker", None) is None:
     st.warning(
         "XGBoost reranker is not loaded; app is running in similarity-only mode. "
         "Run `make train-ranker` to enable reranking."
     )
-#######
 
 with st.sidebar:
     st.header("Exhibition Setup")
@@ -174,8 +150,6 @@ with st.sidebar:
     min_similarity = st.slider("Minimum similarity", 0.0, 1.0, 0.2, 0.05)
     colors_input = st.text_input("Colors (optional)", value="")
     styles_input = st.text_input("Styles (optional)", value="")
-    #year_min = st.number_input("Year min (optional, 0=off)", value=0, step=1)
-    #year_max = st.number_input("Year max (optional, 0=off)", value=0, step=1)
     
     show_diagnostics = st.toggle("Show Selection Diagnostics", value=True)
     
@@ -197,8 +171,6 @@ if generate:
 
         colors = [c.strip().lower() for c in colors_input.split(",") if c.strip()]
         styles = [s.strip().lower() for s in styles_input.split(",") if s.strip()]
-        #y_min = None if year_min == 0 else int(year_min)
-        #y_max = None if year_max == 0 else int(year_max)
 
         with st.spinner("Generating recommendations..."):
             used_ids: set[int] = set()
@@ -217,14 +189,14 @@ if generate:
                         exclude_ids=used_ids,
                         min_score=0.0,
                     )
-                frame = score_with_filters(frame, colors, styles, 0, 0)
-###########
+                frame = score_with_filters(frame, colors, styles)
+
                 reranker_status = getattr(recommender, "last_reranker_status", {})
                 fallback_reason = reranker_status.get("fallback_reason") if isinstance(reranker_status, dict) else None
                 if fallback_reason and not fallback_notice_shown:
                     st.warning(f"Reranker fallback active: {fallback_reason}")
                     fallback_notice_shown = True
-######
+
                 st.subheader(f"{theme} Exhibition")
                 if frame.empty:
                     st.error("No similar pieces of art found for this theme.")
@@ -248,16 +220,19 @@ if generate:
                                 st.image(img, use_container_width=True)
                             
                             # Extract and display the score and metadata
-                            shown_score = float(row.get("raw_score", row.get("score", 0.0)))
                             artist = row.get('artist') or 'Unknown'
                             if pd.isna(artist):
                                 artist = 'Unknown'
+
+                            year = row.get('object_date') or 'Unknown'
+                            if pd.isna(year):
+                                year = 'Unknown'
+
                             st.caption(
                                 f"**{row.get('title') or 'Untitled'},** \n"
                                 f"**{artist}** |\n"
-                                f"{row.get('object_date') or 'Unknown'}"
+                                f"{year}"
                             )
-
 
                     if show_diagnostics:
                         st.divider()
@@ -314,6 +289,3 @@ st.markdown("""
 #    " | Embeddings shape: "
 #    f"`{recommender.embeddings.shape}`"
 #)
-
-
-
