@@ -126,11 +126,28 @@ class CLIPEncoder:
                 "OpenCLIP dependencies are missing. Install `open_clip_torch` and `torch`."
             ) from exc
 
-        model, _, preprocess = open_clip.create_model_and_transforms(
-            self.model_name,
-            pretrained=self.pretrained,
-            device=self.device,
-        )
+        device = self.device
+        try:
+            model, _, preprocess = open_clip.create_model_and_transforms(
+                self.model_name,
+                pretrained=self.pretrained,
+                device=device,
+            )
+        except Exception:
+            # MPS is not fully supported by all OpenCLIP ops on macOS — fall back to CPU.
+            if device != "cpu":
+                logger.warning(
+                    "CLIP failed to load on device=%r; retrying on CPU.", device
+                )
+                device = "cpu"
+                model, _, preprocess = open_clip.create_model_and_transforms(
+                    self.model_name,
+                    pretrained=self.pretrained,
+                    device=device,
+                )
+            else:
+                raise
+
         tokenizer = open_clip.get_tokenizer(self.model_name)
         model.eval()
 
@@ -138,4 +155,5 @@ class CLIPEncoder:
         self._model = model
         self._preprocess = preprocess
         self._tokenizer = tokenizer
+        self.device = device  # update so encode calls use the resolved device
         self._embed_dim = int(getattr(model, "text_projection").shape[1])
