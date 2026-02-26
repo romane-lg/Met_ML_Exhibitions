@@ -1,181 +1,320 @@
-# MET Exhibition AI Curator
-
-An academic recommendation system for themed Metropolitan Museum of Art exhibitions.
-
-The system takes curator-style theme prompts (for example: `ancient egypt`, `religious art`, `women portrait paintings`) and returns grouped artwork recommendations with images and scores.
-
-## Project Overview
-
-This project was developed to support exhibition planning with a reproducible ML pipeline and an interactive interface.
-
-Current operational pipeline:
-- Retrieval backend: CLIP (text-image shared embedding space)
-- Reranker: XGBoost learning-to-rank
-- Serving interfaces: Streamlit UI and FastAPI endpoint
-
-## Development Journey (Academic Context)
-
-This repository intentionally preserves parts of earlier iterations to document project evolution.
-
-1. Early phase: Google Vision API + text features
-- The team initially used Google Vision-based image enrichment.
-- That path is now deprecated for runtime use.
-
-2. Migration phase: CLIP-based multimodal retrieval
-- Retrieval moved to CLIP embeddings as the primary operational path.
-
-3. Ranking phase: XGBoost reranker
-- LightGBM was replaced by XGBoost for stage-2 ranking.
-
-Why legacy code remains:
-- This is an academic project, and retaining legacy components helps show methodology decisions and progression.
-- Legacy paths are documented but not the current production/default flow.
-
-## Current System Flow
-
-## Operational Flow Diagram
-
-```mermaid
-flowchart TB
-  subgraph UR["User Run Phase"]
-    U1["Streamlit app UI"] --> E["ensure_artifacts startup check"]
-    U2["API client FastAPI endpoint"] --> E
-    E -.-> A1["embeddings.npz"]
-    E -.-> A2["meta.csv"]
-    E -.-> A3["clip_metadata.joblib"]
-    E -.-> A4["xgboost_ranker.json"]
-
-    E --> LR["load recommender from artifacts"]
-    Q["User query"] --> CE["CLIP query encoding"]
-    LR --> CE
-    LR --> SR["cosine similarity retrieval"]
-    CE --> SR
-
-    SR --> XR["XGBoost rerank"]
-    A4 --> XR
-    XR --> DF["diversity and min score filtering"]
-    SR -. "fallback if ranker missing/fails" .-> DF
-    DF --> OUT["final recommendations"]
-  end
-
-  subgraph OB["Offline Build Phase"]
-    D["met_data.csv and image files"] --> BF["build_features CLIP pipeline"]
-    BF --> A1
-    BF --> A2
-    BF --> A3
-    A1 --> TR["train XGBoost ranker"]
-    A2 --> TR
-    TR --> A4
-  end
-```
+# MET Exhibition AI Curator 🎨
 
 
-### Offline Build and Train
-1. Build features from MET metadata + images.
-2. Generate CLIP artifacts (`embeddings.npz`, `meta.csv`, `tokens.json`, `clip_metadata.joblib`).
-3. Train XGBoost reranker and save `xgboost_ranker.json`.
+> An AI-powered recommendation system to help Metropolitan Museum of Art exhibition planners automatically curate thematic exhibitions, reducing manual curation effort.
 
-### Online Serving
-1. User submits a theme query (Streamlit or API).
-2. Query is encoded through CLIP retrieval path.
-3. Cosine similarity retrieval generates candidates.
-4. XGBoost reranks candidates when model is available.
-5. Final recommendations are returned.
+---
 
-Fallback behavior:
-- If XGBoost artifact is missing or reranker fails, app falls back to similarity-only ranking.
-- This is surfaced through warnings/diagnostics.
+## 📋 Table of Contents
+- [Project Overview](#project-overview)
+- [Business Problem](#business-problem)
+- [Solution](#solution)
+- [Team](#team)
+- [Dataset](#dataset)
+- [Technical Approach](#technical-approach)
+- [Project Structure](#project-structure)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Results](#results)
+- [Contributing](#contributing)
+- [License](#license)
 
-## Legacy Components (Documented, Not Primary)
+---
 
-### TF-IDF backend
-- Kept as a legacy baseline/fallback context for reproducibility and comparison.
-- Not the primary operational retrieval path.
+## 🎯 Project Overview
 
-### Google Vision API path
-- Deprecated in current runtime flow.
-- You do not need to configure Vision credentials for normal project use.
-- Legacy references may still appear in code/docs to preserve process history.
+This project addresses the growing operational challenges at the Metropolitan Museum of Art, where workers are facing increased workload due to rising museum popularity. We developed an AI-powered chatbot that automatically recommends optimal artwork groupings for themed exhibitions based on computer vision and natural language processing.
 
-## Repository Structure
+**Key Features:**
+- 🤖 Interactive Streamlit chatbot interface
+- 🖼️ Image analysis using Google Vision API
+- 📊 Text analytics on artwork metadata
+- 🎯 Content-based recommendation engine
+- ✅ Constraint handling (exhibition size, diversity, theme coherence)
 
-- `src/models/recommender.py`: retrieval + reranking + recommendation assembly
-- `src/app/streamlit_app.py`: Streamlit interface
-- `src/api/main.py`, `src/api/routes.py`: FastAPI service
-- `scripts/build_features.py`: artifact build pipeline
-- `scripts/train_ranker.py`: XGBoost ranker training
-- `src/bootstrap.py`: artifact readiness checks and startup warnings
-- `docs/METHODOLOGY_AND_DECISIONS.md`: methodology and rationale
+---
 
-## Setup
+## 💼 Business Problem
 
-Prerequisites:
-- Python 3.11+
-- `uv`
-- Git LFS (for image assets)
+**Challenge:** MET exhibition planners spend countless hours manually curating each exhibition, leading to:
+- Worker burnout and unionization efforts
+- Slow exhibition development cycles
+- Limited exploration of creative curatorial options
+- High operational costs
 
-Install and sync:
+**Our Approach:** Build an automated recommendation system using Google Vision API for image analysis and natural language processing to suggest optimal artwork groupings for themed exhibitions.
+
+---
+
+## 💡 Solution
+
+An intelligent recommendation system where curators input:
+- Number of exhibitions needed
+- Themes per exhibition (e.g., "ancient Egypt", "religious art", "portraits")
+- Maximum pieces per exhibition (20-50)
+
+**Output:** Ranked lists of artworks per exhibition with similarity scores and visual previews.
+
+---
+
+## 👥 Team
+
+| Name | GitHub ID | Role |
+|------|-----------|------|
+| Sofia Berumen | @sofiaberumenr | NLP & Text Analytics - TF-IDF, LDA, text preprocessing, metadata analysis |
+| Zoe Levings | @zoe-levings | App Development & Integration - Streamlit UI, visualization, system integration, deployment |
+| Romane Lucas-Girardville | @romane-lg | ML & Recommendation Engine - Feature engineering, similarity scoring, clustering, evaluation |
+| Andrea Vreugdenhil | @andreavreug | Vision API & Image Features - Google Cloud setup, API integration, image processing pipeline |
+
+**Repository:** [romane-lg/Met_ML_Exhibitions](https://github.com/romane-lg/Met_ML_Exhibitions)
+
+---
+
+## 📊 Dataset
+
+**Source:** Metropolitan Museum of Art Collection API  
+**Size:** 448 artworks with images and metadata  
+**Coverage:** Diverse departments (Egyptian Art, European Paintings, Medieval Art, etc.)
+
+**Metadata Fields:**
+- `objectID`: Unique identifier
+- `title`: Artwork title
+- `artist`: Artist name
+- `department`: Museum department
+- `objectDate`: Creation date/period
+- `medium`: Materials and techniques
+- `image_path`: Local path to downloaded image
+
+**Data Collection:**
 ```bash
-python -m pip install uv
-uv sync --all-extras
-git lfs install
-git lfs pull
+python scripts/download_data.py
 ```
 
-## Quickstart
+---
 
-### 1. Build artifacts
+## 🔬 Technical Approach
+
+### **1. Feature Engineering**
+
+#### **Image Features (Computer Vision)**
+- Google Vision API for label detection, object recognition
+- Color analysis (dominant colors, palettes)
+- Text detection (inscriptions, signatures)
+- Web entities for contextual understanding
+
+#### **Text Features (NLP)**
+- TF-IDF vectorization on combined text (title + artist + medium)
+- Topic modeling (Latent Dirichlet Allocation)
+- Named Entity Recognition for dates, locations, artists
+- Sentiment analysis on artwork descriptions
+
+### **2. Recommendation Engine**
+
+- **Content-based filtering:** Cosine similarity on combined feature vectors
+- **Clustering:** K-means to discover natural thematic groups
+- **Query expansion:** Semantic search to match user themes
+- **Constraint optimization:** Balance theme coherence with exhibition size limits
+
+### **3. Tech Stack**
+
+| Component | Technology |
+|-----------|-----------|
+| Computer Vision | Google Vision API |
+| NLP | scikit-learn, spaCy, NLTK |
+| ML Modeling | scikit-learn, numpy, pandas |
+| Frontend | Streamlit |
+| Data Viz | matplotlib, seaborn, plotly |
+| Version Control | Git, GitHub |
+| Experiment Tracking | MLflow (optional) |
+
+---
+
+## 📁 Project Structure
+
+```
+Met_ML_Exhibitions/
+├── data/
+│   ├── raw/                          # Original data (gitignored)
+│   │   ├── met_data.csv
+│   │   └── images/
+│   ├── processed/                     # Processed features
+│   │   ├── vision_features.pkl
+│   │   ├── text_features.pkl
+│   │   └── combined_embeddings.pkl
+│   └── results/                       # Model outputs
+│       └── exhibition_recommendations.csv
+├── notebooks/
+│   ├── 01_data_exploration.ipynb
+│   ├── 02_image_analysis.ipynb
+│   ├── 03_text_analytics.ipynb
+│   ├── 04_feature_engineering.ipynb
+│   ├── 05_clustering_analysis.ipynb
+│   └── 06_recommendation_system.ipynb
+├── src/
+│   ├── data/
+│   │   ├── __init__.py
+│   │   └── data_loader.py            # Data loading utilities
+│   ├── features/
+│   │   ├── __init__.py
+│   │   ├── image_features.py         # Google Vision API
+│   │   ├── text_features.py          # NLP preprocessing
+│   │   └── feature_engineering.py    # Feature combination
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── clustering.py             # Clustering algorithms
+│   │   ├── recommender.py            # Recommendation engine
+│   │   └── utils.py                  # Helper functions
+│   └── app/
+│       ├── __init__.py
+│       └── streamlit_app.py          # Web interface
+├── tests/
+│   ├── __init__.py
+│   ├── test_data_loader.py
+│   └── test_recommender.py
+├── config/
+│   ├── config.yaml                   # Configuration parameters
+│   └── api_keys_template.env         # API key template
+├── docs/
+│   ├── presentation.md               # Presentation outline
+│   └── project_report.md             # Final report
+├── scripts/
+│   ├── download_data.py              # MET API data collection
+│   ├── extract_features.py           # Feature extraction pipeline
+│   └── train_models.py               # Model training script
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── environment.yml
+└── LICENSE
+```
+
+---
+
+## 🚀 Installation
+
+### **Prerequisites**
+- Python 3.9 or higher
+- Google Cloud account (for Vision API)
+- Git
+
+### **Setup**
+
+1. **Clone the repository:**
 ```bash
-make build-features
+git clone https://github.com/romane-lg/Met_ML_Exhibitions.git
+cd Met_ML_Exhibitions
 ```
 
-### 2. Train XGBoost reranker
+2. **Create virtual environment:**
 ```bash
-make train-ranker
+# Using conda
+conda env create -f environment.yml
+conda activate met-curator
+
+# OR using venv
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-### 3. Run Streamlit
+3. **Set up API keys:**
 ```bash
-make streamlit
+# Copy the template
+cp config/api_keys_template.env config/.env
+
+# Edit config/.env and add your Google Vision API key
+# GOOGLE_VISION_API_KEY=your_api_key_here
 ```
 
-### 4. (Optional) Run API
+4. **Download data (if not already done):**
 ```bash
-make serve
+python scripts/download_data.py
 ```
 
-## API Quick Test
+---
 
-### PowerShell (Windows)
-```powershell
-Invoke-RestMethod -Method Get -Uri http://127.0.0.1:8000/health
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/recommendations/theme -ContentType "application/json" -Body '{"theme":"ancient egypt","k":5,"min_similarity":0.2}'
-```
+## 💻 Usage
 
-### macOS/Linux
+### **1. Run Exploratory Data Analysis**
 ```bash
-curl http://127.0.0.1:8000/health
-curl -X POST http://127.0.0.1:8000/recommendations/theme   -H "Content-Type: application/json"   -d '{"theme":"ancient egypt","k":5,"min_similarity":0.2}'
+jupyter notebook notebooks/01_data_exploration.ipynb
 ```
 
-## Quality Checks
-
+### **2. Extract Features**
 ```bash
-make format
-make lint
-make type
-make test
+# Extract image features with Google Vision API
+python scripts/extract_features.py --type image
+
+# Extract text features
+python scripts/extract_features.py --type text
 ```
 
-## Notes for Academic Reporting
+### **3. Train Models**
+```bash
+python scripts/train_models.py --config config/config.yaml
+```
 
-This repository is meant to document both:
-- The final operational system (CLIP + XGBoost), and
-- The development process that led there (including deprecated/legacy paths).
+### **4. Launch Streamlit App**
+```bash
+streamlit run src/app/streamlit_app.py
+```
 
-For detailed rationale, limitations, and tradeoffs, see:
-- `docs/METHODOLOGY_AND_DECISIONS.md`
+Open your browser at `http://localhost:8501`
 
-## License
+### **5. Run Tests**
+```bash
+pytest tests/ -v
+```
 
-MIT
+---
+
+## 📈 Results
+
+*(To be updated after model training)*
+
+**Expected Metrics:**
+- **Clustering Quality:** Silhouette Score > 0.5
+- **Recommendation Relevance:** NDCG@10 > 0.7
+- **Time Savings:** 60%+ reduction in manual curation time
+- **User Satisfaction:** Survey scores (if applicable)
+
+**Sample Exhibition Output:**
+```
+Exhibition 1: Ancient Egyptian Artifacts (25 pieces)
+- Sarcophagus of Henhenet (Similarity: 0.95)
+- Book of the Dead of Imhotep (Similarity: 0.92)
+- Statuette of Amenhotep I (Similarity: 0.89)
+...
+```
+
+---
+
+## 🤝 Contributing
+
+This is an academic project for INSY 674 - Enterprise Data Science at McGill University.
+
+**Development Workflow:**
+1. Create a feature branch: `git checkout -b feature/your-feature`
+2. Make changes and commit: `git commit -m "Add feature"`
+3. Push to branch: `git push origin feature/your-feature`
+4. Create Pull Request for team review
+
+**Best Practices:**
+- Write docstrings for all functions
+- Add unit tests for new features
+- Update documentation as needed
+- Never commit API keys or large data files
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
+---
+
+
+**Last Updated:** February 5, 2026  
+**Course:** INSY 674 - Enterprise Data Science, Winter 2026  
+**Institution:** McGill University - Desautels Faculty of Management

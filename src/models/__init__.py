@@ -1,5 +1,5 @@
-"""Model package exports."""
+"""Models module initialization."""
 
-from .recommender import ExhibitionRecommender, Recommendation
+from .recommender import ExhibitionRecommender
 
-__all__ = ["ExhibitionRecommender", "Recommendation"]
+__all__ = ['ExhibitionRecommender']

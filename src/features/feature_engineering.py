@@ -8,7 +8,7 @@ and prepare them for machine learning models.
 import numpy as np
 import pandas as pd
 from typing import Dict, Optional, Tuple
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
 import logging
 import pickle
@@ -49,7 +49,7 @@ class FeatureEngineer:
         self.n_components = n_components
         self.scaler_type = scaler_type
         
-        self.scaler: StandardScaler | MinMaxScaler
+        self.scaler = None
         self.pca = None
         
         if scaler_type == 'standard':

@@ -1,237 +1,221 @@
-from __future__ import annotations
+"""
+Streamlit web application for MET Exhibition Curator.
 
+This app provides an interactive interface for curators to generate
+exhibition recommendations based on themes.
+"""
+
+import streamlit as st
+import pandas as pd
+import numpy as np
 from pathlib import Path
 import sys
+from PIL import Image
 
-import pandas as pd
-import streamlit as st
+# Add src to path
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
-# Ensure `src` imports resolve when Streamlit is launched outside repo-root PYTHONPATH.
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from src.bootstrap import ensure_artifacts
-from src.config import get_settings
+from src.data import load_met_data
 from src.models import ExhibitionRecommender
 
-STOPWORDS = {
-    "the",
-    "and",
-    "of",
-    "in",
-    "a",
-    "an",
-    "to",
-    "for",
-    "with",
-    "art",
-    "arts",
-    "from",
-}
-SETTINGS = get_settings()
+# Page configuration
+st.set_page_config(
+    page_title="MET Exhibition AI Curator",
+    page_icon="🎨",
+    layout="wide"
+)
+
+
+@st.cache_data
+def load_data():
+    """Load artwork data."""
+    try:
+        df = load_met_data("data/raw/met_data.csv")
+        return df
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return None
 
 
 @st.cache_resource
-def load_recommender() -> tuple[ExhibitionRecommender | None, str | None, str | None]:
-    settings = get_settings()
-    status = ensure_artifacts(settings)
-    if not status.ready:
-        return None, status.error, status.warning
+def load_recommender(df):
+    """Load or create recommender system."""
+    # For MVP, use simple features
+    # TODO: Load actual pre-computed features
+    features = np.random.rand(len(df), 50)
+    
+    recommender = ExhibitionRecommender(
+        features=features,
+        metadata=df,
+        similarity_metric='cosine'
+    )
+    
+    return recommender
 
-    try:
-        recommender = ExhibitionRecommender.from_artifacts(settings.artifacts_dir)
-    except Exception as exc:
-        return None, f"Failed to load artifacts: {exc}", status.warning
 
-    if getattr(recommender, "embedding_backend", "") == "clip":
-        try:
-            # Warm CLIP model on startup to avoid first-query UI stalls.
-            recommender._get_clip_encoder()
-        except Exception as exc:
-            return (
-                None,
-                "CLIP initialization failed. Install `open_clip_torch` and `torch`, "
-                f"or rebuild artifacts with TF-IDF backend. Details: {exc}",
-                status.warning,
+def display_artwork(row, show_image=True):
+    """Display a single artwork."""
+    col1, col2 = st.columns([1, 3])
+    
+    with col1:
+        if show_image and 'image_path' in row:
+            img_path = Path(row['image_path'])
+            if img_path.exists():
+                try:
+                    image = Image.open(img_path)
+                    st.image(image, use_container_width=True)
+                except Exception as e:
+                    st.write("🖼️ Image unavailable")
+            else:
+                st.write("🖼️ Image not found")
+    
+    with col2:
+        st.markdown(f"**{row['title']}**")
+        if pd.notna(row.get('artist')):
+            st.write(f"👤 Artist: {row['artist']}")
+        if pd.notna(row.get('department')):
+            st.write(f"🏛️ Department: {row['department']}")
+        if pd.notna(row.get('objectDate')):
+            st.write(f"📅 Date: {row['objectDate']}")
+        if pd.notna(row.get('medium')):
+            st.write(f"🎨 Medium: {row['medium']}")
+        if 'similarity_score' in row:
+            st.write(f"⭐ Score: {row['similarity_score']:.3f}")
+
+
+def main():
+    """Main application."""
+    
+    # Header
+    st.title("🎨 MET Exhibition AI Curator")
+    st.markdown("*Intelligent artwork recommendations for themed exhibitions*")
+    st.divider()
+    
+    # Load data
+    with st.spinner("Loading artwork collection..."):
+        df = load_data()
+    
+    if df is None:
+        st.error("Failed to load data. Please check your data files.")
+        return
+    
+    # Sidebar - Configuration
+    with st.sidebar:
+        st.header("⚙️ Configuration")
+        
+        n_exhibitions = st.number_input(
+            "Number of Exhibitions",
+            min_value=1,
+            max_value=10,
+            value=3,
+            help="How many themed exhibitions to create"
+        )
+        
+        max_pieces = st.slider(
+            "Max Pieces per Exhibition",
+            min_value=10,
+            max_value=50,
+            value=25,
+            help="Maximum artworks in each exhibition"
+        )
+        
+        show_images = st.checkbox("Show Images", value=True)
+        
+        st.divider()
+        
+        st.metric("Total Artworks", len(df))
+        st.metric("Departments", df['department'].nunique())
+    
+    # Main area - Theme input
+    st.header("📝 Define Your Exhibitions")
+    
+    themes = []
+    cols = st.columns(min(n_exhibitions, 3))
+    
+    for i in range(n_exhibitions):
+        col_idx = i % 3
+        with cols[col_idx]:
+            theme = st.text_input(
+                f"Exhibition {i+1} Theme",
+                placeholder="e.g., Ancient Egypt, Portraits, Religious Art",
+                key=f"theme_{i}"
             )
-
-    return recommender, status.error, status.warning
-
-
-def tokenize(text: str) -> list[str]:
-    return [t.lower() for t in text.replace("/", " ").replace(";", " ").split() if t and t not in STOPWORDS]
-
-
-def extract_year(value: str | None) -> int | None:
-    if not value:
-        return None
-    digits = "".join(ch if ch.isdigit() else " " for ch in str(value)).split()
-    for token in digits:
-        if len(token) == 4:
-            return int(token)
-    return None
-
-
-def score_with_filters(
-    frame: pd.DataFrame,
-    colors: list[str],
-    styles: list[str],
-    year_min: int | None,
-    year_max: int | None,
-) -> pd.DataFrame:
-    if frame.empty:
-        return frame
-
-    combo = (
-        frame[["title", "artist", "department", "medium", "object_date"]]
-        .fillna("")
-        .astype(str)
-        .agg(" ".join, axis=1)
-        .str.lower()
-    )
-
-    modifier = pd.Series(0.0, index=frame.index)
-    if colors:
-        modifier += combo.apply(lambda x: sum(c in x for c in colors) * 0.03)
-    if styles:
-        modifier += combo.apply(lambda x: sum(s in x for s in styles) * 0.03)
-
-    if year_min is not None or year_max is not None:
-        years = frame["object_date"].apply(extract_year)
-        valid = pd.Series(True, index=frame.index)
-        if year_min is not None:
-            valid &= years.fillna(-9999) >= year_min
-        if year_max is not None:
-            valid &= years.fillna(9999) <= year_max
-        modifier += valid.astype(float) * 0.05
-
-    frame = frame.copy()
-    frame["score"] = (frame["score"].astype(float) + modifier).clip(upper=1.0)
-    return frame.sort_values("score", ascending=False)
-
-
-def image_path(raw: str | None) -> str | None:
-    if not raw:
-        return None
-    # Normalize separators so Windows-style paths work on Mac/Linux too
-    candidate = Path(raw.replace("\\", "/"))
-    if not candidate.is_absolute():
-        images_base = Path(SETTINGS.images_dir)
-        first = candidate.parts[0].lower() if candidate.parts else ""
-        if first == "images":
-            candidate = images_base.parent / candidate
-        elif len(candidate.parts) > 1:
-            # project-root-relative path, e.g. "data/raw/images/398746.jpg"
-            candidate = Path.cwd() / candidate
-        else:
-            candidate = images_base / candidate
-    return str(candidate) if candidate.exists() else None
-
-
-st.set_page_config(page_title="MET Exhibition AI Curator", layout="wide")
-st.title("MET Exhibition AI Curator")
-st.write("Choose themes and generate grouped exhibition recommendations.")
-
-recommender, bootstrap_error, bootstrap_warning = load_recommender()
-if bootstrap_warning:
-    st.warning(bootstrap_warning)
-if bootstrap_error:
-    st.error(bootstrap_error)
-    st.stop()
-if recommender is None:
-    st.warning("Artifacts not found and could not be generated.")
-    st.stop()
-assert recommender is not None
-if getattr(recommender, "ranker", None) is None:
-    st.warning(
-        "XGBoost reranker is not loaded; app is running in similarity-only mode. "
-        "Run `make train-ranker` to enable reranking."
-    )
-st.caption(
-    "Backend: "
-    f"`{getattr(recommender, 'embedding_backend', 'unknown')}`"
-    " | Artifacts: "
-    f"`{SETTINGS.artifacts_dir}`"
-    " | Embeddings shape: "
-    f"`{recommender.embeddings.shape}`"
-)
-
-with st.sidebar:
-    st.header("Exhibition Setup")
-    st.caption(
-        "This recommender works best when your theme uses attributes represented in the collection "
-        "(period, material, style, subject, color, culture, or department). If results are weak, "
-        "refine your prompt with concrete descriptors that combine what it is, when, and how it looks."
-    )
-    themes_input = st.text_area(
-        "Themes (comma-separated)",
-        value="ancient egypt, religious art, portraits",
-    )
-    pieces = st.slider("Pieces per exhibition", 5, 10, 8)
-    min_similarity = st.slider("Minimum similarity", 0.0, 1.0, 0.2, 0.05)
-    colors_input = st.text_input("Colors (optional)", value="")
-    styles_input = st.text_input("Styles (optional)", value="")
-    year_min = st.number_input("Year min (optional, 0=off)", value=0, step=1)
-    year_max = st.number_input("Year max (optional, 0=off)", value=0, step=1)
-    generate = st.button("Generate Exhibitions")
-
-if generate:
-    try:
-        themes = [t.strip() for t in themes_input.split(",") if t.strip()]
-        if not (1 <= len(themes) <= 7):
-            st.error("Please enter between 1 and 7 themes.")
-            st.stop()
-
-        colors = [c.strip().lower() for c in colors_input.split(",") if c.strip()]
-        styles = [s.strip().lower() for s in styles_input.split(",") if s.strip()]
-        y_min = None if year_min == 0 else int(year_min)
-        y_max = None if year_max == 0 else int(year_max)
-
-        with st.spinner("Generating recommendations..."):
-            used_ids: set[int] = set()
-            fallback_notice_shown = False
-            for theme in themes:
-                frame = recommender.recommend_for_theme(
-                    theme,
-                    n_recommendations=pieces,
-                    exclude_ids=used_ids,
-                    min_score=min_similarity,
-                )
-                if frame.empty:
-                    frame = recommender.recommend_for_theme(
-                        theme,
-                        n_recommendations=pieces,
-                        exclude_ids=used_ids,
-                        min_score=0.0,
+            themes.append(theme)
+    
+    st.divider()
+    
+    # Generate button
+    if st.button("🎯 Generate Exhibition Recommendations", type="primary"):
+        # Filter empty themes
+        valid_themes = [t for t in themes if t.strip()]
+        
+        if not valid_themes:
+            st.warning("Please enter at least one exhibition theme.")
+            return
+        
+        # Load recommender
+        with st.spinner("Initializing recommendation engine..."):
+            recommender = load_recommender(df)
+        
+        # Generate recommendations
+        with st.spinner("Curating exhibitions..."):
+            exhibitions = recommender.recommend_exhibitions(
+                themes=valid_themes,
+                max_pieces_per_exhibition=max_pieces,
+                min_pieces_per_exhibition=15
+            )
+        
+        # Display results
+        st.success(f"✅ Generated {len(exhibitions)} themed exhibitions!")
+        
+        for theme, artworks in exhibitions.items():
+            st.header(f"🎨 {theme.title()}")
+            
+            # Exhibition stats
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Pieces", len(artworks))
+            with col2:
+                coherence = recommender.evaluate_coherence(artworks['objectID'].tolist())
+                st.metric("Coherence Score", f"{coherence:.2f}")
+            with col3:
+                unique_depts = artworks['department'].nunique()
+                st.metric("Departments", unique_depts)
+            
+            st.divider()
+            
+            # Display artworks
+            for idx, row in artworks.head(10).iterrows():  # Show top 10
+                display_artwork(row, show_images)
+                st.divider()
+            
+            if len(artworks) > 10:
+                with st.expander(f"View all {len(artworks)} artworks"):
+                    st.dataframe(
+                        artworks[['objectID', 'title', 'artist', 'department', 'similarity_score']],
+                        use_container_width=True
                     )
-                frame = score_with_filters(frame, colors, styles, y_min, y_max)
+            
+            # Download option
+            csv = artworks.to_csv(index=False)
+            st.download_button(
+                label=f"📥 Download {theme} Exhibition",
+                data=csv,
+                file_name=f"{theme.replace(' ', '_')}_exhibition.csv",
+                mime="text/csv"
+            )
+            
+            st.markdown("---")
+    
+    # Footer
+    st.divider()
+    st.markdown("""
+        <div style='text-align: center; color: gray;'>
+            <p>MET Exhibition AI Curator | INSY 674 Winter 2026</p>
+            <p>Data source: Metropolitan Museum of Art Collection API</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-                reranker_status = getattr(recommender, "last_reranker_status", {})
-                fallback_reason = reranker_status.get("fallback_reason") if isinstance(reranker_status, dict) else None
-                if fallback_reason and not fallback_notice_shown:
-                    st.warning(f"Reranker fallback active: {fallback_reason}")
-                    fallback_notice_shown = True
 
-                st.subheader(f"Theme: {theme}")
-                if frame.empty:
-                    st.error("No similar pieces of art found for this theme.")
-                    continue
-                if frame["score"].max() < min_similarity:
-                    st.warning("Showing best available matches below the selected minimum similarity.")
-
-                used_ids.update(int(v) for v in frame["object_id"].tolist())
-                cols = st.columns(4)
-                for col_idx, (_, row) in enumerate(frame.iterrows()):
-                    with cols[col_idx % len(cols)]:
-                        img = image_path(row.get("image_path"))
-                        if img:
-                            st.image(img, use_container_width=True)
-                        shown_score = float(row.get("similarity_score", row.get("score", 0.0)))
-                        st.caption(
-                            f"{row.get('title') or 'Untitled'} | {row.get('artist') or 'Unknown'}"
-                            f" | score={shown_score:.3f}"
-                        )
-    except Exception as exc:
-        st.error("Theme generation failed. See details below.")
-        st.exception(exc)
+if __name__ == "__main__":
+    main()

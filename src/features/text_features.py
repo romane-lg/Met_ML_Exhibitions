@@ -5,17 +5,27 @@ This module provides functions for extracting features from artwork metadata
 using natural language processing techniques.
 """
 
-import numpy as np
-import logging
-from typing import Any, Dict, List, Optional
-
 import pandas as pd
+import numpy as np
+from typing import List, Dict, Optional
+import logging
+import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
-
-from src.features.nlp_utils import get_lemmatizer, get_stopwords, tokenize_text
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 
 logger = logging.getLogger(__name__)
+
+# Download required NLTK data
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('wordnet')
 
 
 class TextFeatureExtractor:
@@ -49,8 +59,8 @@ class TextFeatureExtractor:
         
         self.tfidf_vectorizer = None
         self.lda_model = None
-        self.lemmatizer = get_lemmatizer()
-        self.stop_words = get_stopwords()
+        self.lemmatizer = WordNetLemmatizer()
+        self.stop_words = set(stopwords.words('english'))
         
         logger.info("Initialized TextFeatureExtractor")
     
@@ -71,7 +81,22 @@ class TextFeatureExtractor:
         if pd.isna(text):
             return ""
         
-        tokens = tokenize_text(text, stop_words=self.stop_words, lemmatizer=self.lemmatizer, min_len=2)
+        # Convert to string and lowercase
+        text = str(text).lower()
+        
+        # Remove special characters and digits
+        text = re.sub(r'[^a-zA-Z\s]', ' ', text)
+        
+        # Tokenize
+        tokens = word_tokenize(text)
+        
+        # Remove stopwords and lemmatize
+        tokens = [
+            self.lemmatizer.lemmatize(token)
+            for token in tokens
+            if token not in self.stop_words and len(token) > 2
+        ]
+        
         return ' '.join(tokens)
     
     def combine_text_fields(
@@ -248,7 +273,7 @@ def extract_all_text_features(
     text_columns: List[str] = ['title', 'artist', 'medium', 'department'],
     n_topics: int = 10,
     save_path: Optional[str] = None
-) -> Dict[str, Any]:
+) -> Dict[str, np.ndarray]:
     """
     Extract all text features from a DataFrame.
     
