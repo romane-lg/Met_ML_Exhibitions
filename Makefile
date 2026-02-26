@@ -1,6 +1,10 @@
 .PHONY: run setup clean lfs-pull lint format type test coverage serve build-features train-ranker evaluate-backends evaluate-comprehensive compare-clip streamlit streamlit-tfidf docker-up docker-down
 
 export PYTHONPATH := .
+# Required on macOS: prevent segfault from conflicting OpenMP runtimes (PyTorch vs scikit-learn/lightgbm)
+export KMP_DUPLICATE_LIB_OK := TRUE
+# Required on macOS: prevent segfault when Streamlit forks a process after PyTorch/ObjC runtime is initialized
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY := YES
 
 # Run the full pipeline from scratch: install deps → build features → train → launch UI
 run: setup build-features train-ranker streamlit
@@ -36,8 +40,7 @@ serve:
 	uv run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
 streamlit:
-
-	uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES KMP_DUPLICATE_LIB_OK=TRUE uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --server.fileWatcherType none
 
 streamlit-tfidf:
 	cmd /c "set MET_ARTIFACTS_DIR=artifacts_tfidf&& set MET_AUTO_BUILD_ON_STARTUP=false&& set MET_ENABLE_VISION=false&& uv run streamlit run src/app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0"
