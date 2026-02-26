@@ -7,6 +7,17 @@ from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _default_clip_device() -> str:
+    """Return 'mps' on Apple Silicon when PyTorch MPS is available, else 'cpu'."""
+    try:
+        import torch
+        if torch.backends.mps.is_available():
+            return "mps"
+    except Exception:
+        pass
+    return "cpu"
+
+
 class Settings(BaseSettings):
     data_csv: str = Field(default="data/raw/met_data.csv", validation_alias="MET_DATA_CSV")
     images_dir: str = Field(default="data/raw/images", validation_alias="MET_IMAGES_DIR")
@@ -21,7 +32,7 @@ class Settings(BaseSettings):
         default="laion2b_s34b_b79k",
         validation_alias="MET_CLIP_PRETRAINED",
     )
-    clip_device: str = Field(default="cpu", validation_alias="MET_CLIP_DEVICE")
+    clip_device: str = Field(default_factory=_default_clip_device, validation_alias="MET_CLIP_DEVICE")
     clip_batch_size: int = Field(default=32, validation_alias="MET_CLIP_BATCH_SIZE")
     clip_text_weight: float = Field(default=0.5, validation_alias="MET_CLIP_TEXT_WEIGHT")
     clip_image_weight: float = Field(default=0.5, validation_alias="MET_CLIP_IMAGE_WEIGHT")

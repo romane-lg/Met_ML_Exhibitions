@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import time
 from pathlib import Path
+from typing import Any
 
 BASE_URL = "https://collectionapi.metmuseum.org/public/collection/v1"
 IMG_DIR = Path("data/raw/images")
@@ -21,8 +22,8 @@ COOLDOWN_403_SECONDS_1 = 60
 COOLDOWN_403_THRESHOLD_2 = 20
 COOLDOWN_403_SECONDS_2 = 180
 
-def get_json_with_retries(session: requests.Session, url: str, timeout: int, max_retries: int):
-    last_err = None
+def get_json_with_retries(session: requests.Session, url: str, timeout: int, max_retries: int) -> dict[str, Any]:
+    last_err: Exception | None = None
     for attempt in range(max_retries):
         try:
             r = session.get(url, timeout=timeout)
@@ -38,7 +39,9 @@ def get_json_with_retries(session: requests.Session, url: str, timeout: int, max
         except Exception as e:
             last_err = e
             time.sleep(min(0.25 * (2 ** attempt), 2.0))
-    raise last_err
+    if last_err is not None:
+        raise last_err
+    raise RuntimeError("Failed to fetch JSON after retries with no captured exception")
 
 def download_with_retries(session: requests.Session, url: str, path: Path, timeout: int, max_retries: int) -> bool:
     if path.exists():

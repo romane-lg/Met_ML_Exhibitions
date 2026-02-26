@@ -155,6 +155,13 @@ if recommender is None:
     st.stop()
 assert recommender is not None
 
+########
+if getattr(recommender, "ranker", None) is None:
+    st.warning(
+        "XGBoost reranker is not loaded; app is running in similarity-only mode. "
+        "Run `make train-ranker` to enable reranking."
+    )
+#######
 
 with st.sidebar:
     st.header("Exhibition Setup")
@@ -195,6 +202,7 @@ if generate:
 
         with st.spinner("Generating recommendations..."):
             used_ids: set[int] = set()
+            fallback_notice_shown = False
             for theme in themes:
                 frame = recommender.recommend_for_theme(
                     theme,
@@ -210,13 +218,14 @@ if generate:
                         min_score=0.0,
                     )
                 frame = score_with_filters(frame, colors, styles, 0, 0)
-
+###########
+                reranker_status = getattr(recommender, "last_reranker_status", {})
+                fallback_reason = reranker_status.get("fallback_reason") if isinstance(reranker_status, dict) else None
+                if fallback_reason and not fallback_notice_shown:
+                    st.warning(f"Reranker fallback active: {fallback_reason}")
+                    fallback_notice_shown = True
+######
                 st.subheader(f"{theme} Exhibition")
-
-
-                if frame.empty:
-                    st.error("No similar pieces of art found for this theme.")
-                    continue
                 if frame.empty:
                     st.error("No similar pieces of art found for this theme.")
                     continue
@@ -248,6 +257,7 @@ if generate:
                                 f"**{artist}** |\n"
                                 f"{row.get('object_date') or 'Unknown'}"
                             )
+
 
                     if show_diagnostics:
                         st.divider()

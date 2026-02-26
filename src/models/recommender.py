@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,6 +24,7 @@ class Recommendation:
     object_id: int
     score: float
     raw_score: float
+    similarity_score: float
     title: str | None
     artist: str | None
     department: str | None
@@ -33,8 +35,6 @@ class Recommendation:
 
 class Ranker(Protocol):
     def predict(self, X: np.ndarray) -> np.ndarray: ...
-
-    def predict_proba(self, X: np.ndarray) -> np.ndarray: ...
 
 
 class LDAModel(Protocol):
@@ -99,6 +99,10 @@ class ExhibitionRecommender:
         self._lexical_docs = self._metadata_docs(self.metadata)
         self._lexical_vectorizer = TfidfVectorizer(min_df=1, max_features=12000, ngram_range=(1, 2))
         self._lexical_matrix = self._lexical_vectorizer.fit_transform(self._lexical_docs)
+        self.last_reranker_status: dict[str, object] = {
+            "reranker_used": self.ranker is not None,
+            "fallback_reason": None,
+        }
 
     @classmethod
     def from_artifacts(cls, artifacts_dir: str) -> ExhibitionRecommender:
@@ -144,8 +148,18 @@ class ExhibitionRecommender:
                 text_vectorizer = joblib.load(vectorizer_path)
             else:
                 raise FileNotFoundError(f"Missing TF-IDF artifact: {vectorizer_path}")
-        ranker_path = base / "lightgbm_ranker.joblib"
-        ranker = joblib.load(ranker_path) if ranker_path.exists() else None
+        ranker = None
+        ranker_path = base / "xgboost_ranker.json"
+        if ranker_path.exists():
+            try:
+                import xgboost as xgb
+
+                model_cls = getattr(xgb, "XGBRanker", None)
+                if model_cls is not None:
+                    ranker = model_cls()
+                    ranker.load_model(str(ranker_path))
+            except Exception:
+                ranker = None
         lda_path = base / "lda_model.joblib"
         lda_model = joblib.load(lda_path) if lda_path.exists() else None
         numeric_path = base / "numeric_features.csv"
@@ -196,23 +210,24 @@ class ExhibitionRecommender:
         if n_recommendations < 1:
             raise ValueError("n_recommendations must be >= 1.")
 
-        tokens = self._simple_tokenize(theme_query)
-        scores = self.score_by_tokens(tokens)
+        positive_tokens, negative_clauses = self._parse_query_intent(theme_query)
+        scores = self._score_with_negation(positive_tokens, negative_clauses)
 
         excluded = set(exclude_ids or [])
         if exclude_ids:
             mask = self.metadata["objectID"].astype("Int64").isin(excluded)
             scores[mask.to_numpy()] = -1.0
 
-        pool_size = min(len(self.metadata), max(n_recommendations * 8, 80))
+        pool_size = self._candidate_pool_size(n_recommendations, len(positive_tokens))
         ranked = np.argsort(scores)[::-1][:pool_size]
-        qarr = self._query_vector(tokens)
+        qarr = self._query_vector(positive_tokens)
         reranked_scores = self._rerank_scores(theme_query, qarr, scores, ranked)
         calibrated = self._calibrate_scores(reranked_scores)
         return self._select_diverse_recommendations(
             ranked_indices=ranked,
             ranked_scores=calibrated,
             raw_scores=reranked_scores,
+            similarity_scores=scores,
             n_recommendations=n_recommendations,
             min_score=min_score,
             excluded_ids=excluded,
@@ -267,10 +282,31 @@ class ExhibitionRecommender:
         if self.embedding_backend != "clip":
             return clip_scores
         lexical_scores = self._lexical_scores(tokens)
+        sim_w, lex_w = self._adaptive_clip_weights(tokens)
         return (
-            (self.clip_similarity_weight * clip_scores)
-            + (self.clip_lexical_weight * lexical_scores)
+            (sim_w * clip_scores)
+            + (lex_w * lexical_scores)
         ).astype(np.float32)
+
+    def _score_with_negation(
+        self,
+        positive_tokens: list[str],
+        negative_clauses: list[list[str]],
+        negative_weight: float = 0.35,
+    ) -> np.ndarray:
+        base_scores = self.score_by_tokens(positive_tokens)
+        if not negative_clauses:
+            return base_scores
+
+        penalties = np.zeros_like(base_scores, dtype=np.float32)
+        for clause in negative_clauses:
+            if not clause:
+                continue
+            clause_scores = self.score_by_tokens(clause).astype(np.float32)
+            penalties = np.maximum(penalties, clause_scores)
+        return (base_scores.astype(np.float32) - (np.float32(negative_weight) * penalties)).astype(
+            np.float32
+        )
 
     def _query_vector(self, tokens: list[str]) -> np.ndarray:
         query = " ".join(tokens)
@@ -318,6 +354,10 @@ class ExhibitionRecommender:
     ) -> np.ndarray:
         base = base_scores[candidate_indices].astype(np.float32)
         if self.ranker is None:
+            self.last_reranker_status = {
+                "reranker_used": False,
+                "fallback_reason": "xgboost_ranker_missing",
+            }
             return base
 
         query_num = self._query_numeric_features(theme_query)
@@ -332,13 +372,61 @@ class ExhibitionRecommender:
             feats.append(np.concatenate([emb_diff, cosine, num_diff]))
         X = np.vstack(feats)
         try:
-            if hasattr(self.ranker, "predict_proba"):
-                rank_scores = self.ranker.predict_proba(X)[:, 1].astype(np.float32)
-            else:
-                rank_scores = self.ranker.predict(X).astype(np.float32)
-        except Exception:
+            rank_scores = self.ranker.predict(X).astype(np.float32)
+        except Exception as exc:
+            self.last_reranker_status = {
+                "reranker_used": False,
+                "fallback_reason": f"xgboost_ranker_failed:{type(exc).__name__}",
+            }
             return base
-        return (0.55 * base + 0.45 * rank_scores).astype(np.float32)
+        base_norm = self._calibrate_scores(base)
+        rank_norm = self._calibrate_scores(rank_scores)
+        agreement = 0.0
+        if base_norm.size > 1 and rank_norm.size > 1:
+            corr = np.corrcoef(base_norm, rank_norm)[0, 1]
+            if np.isfinite(corr):
+                agreement = float(max(0.0, corr))
+        rank_weight = 0.25 + (0.2 * agreement)
+        self.last_reranker_status = {"reranker_used": True, "fallback_reason": None}
+        return ((1.0 - rank_weight) * base_norm + (rank_weight * rank_norm)).astype(np.float32)
+
+    def _candidate_pool_size(self, n_recommendations: int, token_count: int) -> int:
+        if token_count <= 2:
+            multiplier = 14
+        elif token_count <= 5:
+            multiplier = 11
+        else:
+            multiplier = 9
+        pool = max(n_recommendations * multiplier, 120)
+        if self.ranker is not None:
+            pool = int(pool * 1.3)
+        return min(len(self.metadata), pool)
+
+    def _adaptive_clip_weights(self, tokens: list[str]) -> tuple[float, float]:
+        sim_w = float(self.clip_similarity_weight)
+        lex_w = float(self.clip_lexical_weight)
+        if not tokens:
+            return sim_w, lex_w
+        if len(tokens) <= 2:
+            sim_w = min(0.9, sim_w + 0.1)
+        idf_values: list[float] = []
+        vocab = self._lexical_vectorizer.vocabulary_
+        idf_arr = getattr(self._lexical_vectorizer, "idf_", None)
+        if idf_arr is not None:
+            for tok in tokens:
+                idx = vocab.get(tok)
+                if idx is not None:
+                    idf_values.append(float(idf_arr[idx]))
+        if idf_values and idf_arr is not None:
+            idf_min = float(np.min(idf_arr))
+            idf_max = float(np.max(idf_arr))
+            span = max(idf_max - idf_min, 1e-6)
+            specificity = (float(np.mean(idf_values)) - idf_min) / span
+            lex_w = min(0.8, lex_w + (0.25 * specificity))
+        total = sim_w + lex_w
+        if total <= 0:
+            return 1.0, 0.0
+        return sim_w / total, lex_w / total
 
     @staticmethod
     def _calibrate_scores(scores: np.ndarray) -> np.ndarray:
@@ -355,6 +443,7 @@ class ExhibitionRecommender:
         ranked_indices: np.ndarray,
         ranked_scores: np.ndarray,
         raw_scores: np.ndarray,
+        similarity_scores: np.ndarray,
         n_recommendations: int,
         min_score: float,
         excluded_ids: set[int],
@@ -367,6 +456,9 @@ class ExhibitionRecommender:
         }
         raw_score_by_idx = {
             int(idx): float(score) for idx, score in zip(ranked_indices.tolist(), raw_scores.tolist())
+        }
+        similarity_by_idx = {
+            int(idx): float(similarity_scores[int(idx)]) for idx in ranked_indices.tolist()
         }
         candidate_indices = [int(idx) for idx in ranked_indices.tolist()]
         selected: list[int] = []
@@ -418,7 +510,8 @@ class ExhibitionRecommender:
             selected.append(best_idx)
             score = score_by_idx.get(best_idx, 0.0)
             raw_score = raw_score_by_idx.get(best_idx, score)
-            selected_rows.append(self._row(best_idx, score, raw_score))
+            similarity_score = similarity_by_idx.get(best_idx, score)
+            selected_rows.append(self._row(best_idx, score, raw_score, similarity_score))
 
             chosen = self.metadata.iloc[best_idx]
             chosen_artist = str(chosen.get("artist") or "").strip().lower()
@@ -468,12 +561,19 @@ class ExhibitionRecommender:
                 vector[i] = float(np.mean([rgb[2] for rgb in rgb_hits]))
         return vector
 
-    def _row(self, idx: int, score: float, raw_score: float | None = None) -> Recommendation:
+    def _row(
+        self,
+        idx: int,
+        score: float,
+        raw_score: float | None = None,
+        similarity_score: float | None = None,
+    ) -> Recommendation:
         item = self.metadata.iloc[idx]
         return Recommendation(
             object_id=int(item.get("objectID")),
             score=score,
             raw_score=score if raw_score is None else raw_score,
+            similarity_score=score if similarity_score is None else similarity_score,
             title=item.get("title"),
             artist=item.get("artist"),
             department=item.get("department"),
@@ -485,6 +585,42 @@ class ExhibitionRecommender:
     @staticmethod
     def _simple_tokenize(text: str) -> list[str]:
         return tokenize_text(text)
+
+    @staticmethod
+    def _parse_query_intent(theme_query: str) -> tuple[list[str], list[list[str]]]:
+        tokens_raw = re.findall(r"[a-z0-9']+", str(theme_query).lower())
+        if not tokens_raw:
+            return [], []
+
+        neg_markers = {"no", "not", "without", "exclude", "excluding", "except", "minus"}
+        clause_stops = {"and", "or", "but"}
+
+        positive_raw: list[str] = []
+        negative_clauses_raw: list[list[str]] = []
+        idx = 0
+        while idx < len(tokens_raw):
+            token = tokens_raw[idx]
+            if token in neg_markers:
+                idx += 1
+                clause: list[str] = []
+                while idx < len(tokens_raw):
+                    current = tokens_raw[idx]
+                    if current in neg_markers or current in clause_stops:
+                        break
+                    clause.append(current)
+                    idx += 1
+                if clause:
+                    negative_clauses_raw.append(clause)
+                continue
+            positive_raw.append(token)
+            idx += 1
+
+        positive_tokens = tokenize_text(" ".join(positive_raw)) if positive_raw else tokenize_text(theme_query)
+        if not positive_tokens:
+            positive_tokens = tokenize_text(theme_query)
+        negative_clauses = [tokenize_text(" ".join(chunk)) for chunk in negative_clauses_raw]
+        negative_clauses = [chunk for chunk in negative_clauses if chunk]
+        return positive_tokens, negative_clauses
 
     @staticmethod
     def _metadata_docs(metadata: pd.DataFrame) -> list[str]:
