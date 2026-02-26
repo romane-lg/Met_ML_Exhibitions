@@ -36,7 +36,7 @@ dependencies = [
   "torch",
   "open_clip_torch",
   "uvicorn[standard]",
-  "lightgbm",
+  "xgboost",
   "psutil",
 ]
 

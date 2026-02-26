@@ -143,6 +143,11 @@ if recommender is None:
     st.warning("Artifacts not found and could not be generated.")
     st.stop()
 assert recommender is not None
+if getattr(recommender, "ranker", None) is None:
+    st.warning(
+        "XGBoost reranker is not loaded; app is running in similarity-only mode. "
+        "Run `make train-ranker` to enable reranking."
+    )
 st.caption(
     "Backend: "
     f"`{getattr(recommender, 'embedding_backend', 'unknown')}`"
@@ -185,6 +190,7 @@ if generate:
 
         with st.spinner("Generating recommendations..."):
             used_ids: set[int] = set()
+            fallback_notice_shown = False
             for theme in themes:
                 frame = recommender.recommend_for_theme(
                     theme,
@@ -201,6 +207,12 @@ if generate:
                     )
                 frame = score_with_filters(frame, colors, styles, y_min, y_max)
 
+                reranker_status = getattr(recommender, "last_reranker_status", {})
+                fallback_reason = reranker_status.get("fallback_reason") if isinstance(reranker_status, dict) else None
+                if fallback_reason and not fallback_notice_shown:
+                    st.warning(f"Reranker fallback active: {fallback_reason}")
+                    fallback_notice_shown = True
+
                 st.subheader(f"Theme: {theme}")
                 if frame.empty:
                     st.error("No similar pieces of art found for this theme.")
@@ -215,7 +227,7 @@ if generate:
                         img = image_path(row.get("image_path"))
                         if img:
                             st.image(img, use_container_width=True)
-                        shown_score = float(row.get("raw_score", row.get("score", 0.0)))
+                        shown_score = float(row.get("similarity_score", row.get("score", 0.0)))
                         st.caption(
                             f"{row.get('title') or 'Untitled'} | {row.get('artist') or 'Unknown'}"
                             f" | score={shown_score:.3f}"
