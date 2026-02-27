@@ -62,9 +62,7 @@ def tokenize(text: str) -> list[str]:
     return [t.lower() for t in text.replace("/", " ").replace(";", " ").split() if t and t not in STOPWORDS]
 
 def score_with_filters(
-    frame: pd.DataFrame,
-    colors: list[str],
-    styles: list[str]
+    frame: pd.DataFrame
 ) -> pd.DataFrame:
     if frame.empty:
         return frame
@@ -77,15 +75,8 @@ def score_with_filters(
         .str.lower()
     )
 
-    modifier = pd.Series(0.0, index=frame.index)
-    if colors:
-        modifier += combo.apply(lambda x: sum(c in x for c in colors) * 0.03)
-    if styles:
-        modifier += combo.apply(lambda x: sum(s in x for s in styles) * 0.03)
-
-
     frame = frame.copy()
-    frame["score"] = (frame["score"].astype(float) + modifier).clip(upper=1.0)
+    frame["score"] = (frame["score"].astype(float)).clip(upper=1.0)
     return frame.sort_values("score", ascending=False)
 
 
@@ -148,8 +139,6 @@ with st.sidebar:
     )
     pieces = st.slider("Target pieces per exhibition", 5, 10, 8)
     min_similarity = st.slider("Minimum similarity", 0.0, 1.0, 0.2, 0.05)
-    colors_input = st.text_input("Colors (optional)", value="")
-    styles_input = st.text_input("Styles (optional)", value="")
     
     show_diagnostics = st.toggle("Show Selection Diagnostics", value=True)
     
@@ -169,9 +158,6 @@ if generate:
             st.error("Please enter between 1 and 7 themes.")
             st.stop()
 
-        colors = [c.strip().lower() for c in colors_input.split(",") if c.strip()]
-        styles = [s.strip().lower() for s in styles_input.split(",") if s.strip()]
-
         with st.spinner("Generating recommendations..."):
             used_ids: set[int] = set()
             fallback_notice_shown = False
@@ -189,7 +175,7 @@ if generate:
                         exclude_ids=used_ids,
                         min_score=0.0,
                     )
-                frame = score_with_filters(frame, colors, styles)
+                frame = score_with_filters(frame)
 
                 reranker_status = getattr(recommender, "last_reranker_status", {})
                 fallback_reason = reranker_status.get("fallback_reason") if isinstance(reranker_status, dict) else None
