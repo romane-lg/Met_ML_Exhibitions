@@ -244,7 +244,7 @@ if generate:
                         st.dataframe(
                             diag_frame.style.format({
                                 'AI Match (Raw)': '{:.3f}',
-                                'Filter Bonus': '+{:.3f}',
+                                'Refinement Score': '{:.3f}',
                                 'Final Score': '{:.3f}'
                             }), 
                             use_container_width=True, 
