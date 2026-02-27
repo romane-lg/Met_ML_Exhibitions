@@ -1,0 +1,15 @@
+[theme]
+primaryColor="#f20717"
+font = "serif"
+headingFont = "serif"
+codeFont = "monospace"
+base = "dark"
+secondaryBackgroundColor = "#0E1117"    # Near black
+backgroundColor = "#262730" # Dark gray
+textColor = "#FFFFFF"          # White
+
+
+[theme.sidebar]
+font = "serif"
+headingFont = "serif"
+codeFont = "monospace"
